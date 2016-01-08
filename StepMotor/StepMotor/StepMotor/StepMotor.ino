@@ -30,10 +30,13 @@ This example runs on mega and uno.
 */
 
 #include <PWM.h>
-
+#define ENA_1 4
+#define ENA_2 5
+#define DIR_1 2
+#define DIR_2 3
 //use pin 11 on the mega for this example to work
-int led = 9; // the pin that the LED is attached to
-int led2 = 10;
+#define PWM_1 9
+#define PWM_2 10
 void setup()
 {
 	InitTimersSafe(); //initialize all timers except for 0, to save time keeping functions
@@ -42,8 +45,8 @@ void setup()
 
 	//demonstrateFrequencysEffectOnResolution();
 	settingHighResolutionDuty();
-	pinMode(2, OUTPUT);
-	pinMode(3, OUTPUT);
+	pinMode(DIR_1, OUTPUT);
+	pinMode(DIR_2, OUTPUT);
 }
 
 void demonstrateFrequencysEffectOnResolution()
@@ -51,11 +54,11 @@ void demonstrateFrequencysEffectOnResolution()
 	Serial.println("As frequency increases, resolution will decrease...");
 	for (int i = 1; i < 10000; i += 10)
 	{
-		SetPinFrequency(led, i);  //setting the frequency
+		SetPinFrequency(PWM_1, i);  //setting the frequency
 
 		uint16_t frequency = Timer1_GetFrequency();
 		uint16_t decimalResolution = Timer1_GetTop() + 1;
-		uint16_t binaryResolution = GetPinResolution(led); //this number will be inaccurately low because the float is being truncated to a int
+		uint16_t binaryResolution = GetPinResolution(PWM_1); //this number will be inaccurately low because the float is being truncated to a int
 
 		char strOut[75];
 		sprintf(strOut, "Frequency: %u Hz\r\n Number of Possible Duties: %u\r\n Resolution: %u bit\r\n", frequency, decimalResolution, binaryResolution);
@@ -68,32 +71,76 @@ void demonstrateFrequencysEffectOnResolution()
 
 void settingHighResolutionDuty()
 {
-	SetPinFrequency(led, 5000); //setting the frequency to 10 Hz
-	SetPinFrequency(led2, 5000);
+	SetPinFrequency(PWM_1, 5000); //setting the frequency to 10 Hz
+	SetPinFrequency(PWM_2, 5000);
 	Serial.println("\r\npwmWrite() and pwmWriteHR() are identical except for the valid range of inputs.\r\nThe following loop calls both functions to produce the same result on the \r\nLED pin. The pin should to run 10Hz at 50% duty regardless of the function called.\r\n");
 
-	//the led should flicker (10Hz 50% duty) for 1 second before calling
+	//the PWM_1 should flicker (10Hz 50% duty) for 1 second before calling
 	//the other function. This demonstrates the use of pwmWriteHR() and how its
 	//use is nearly identical to pwmWrite()
 
 		//setting the duty to 50% with 8 bit pwm. 128 is 1/2 of 256
-		//pwmWrite(led, 128);
-		//pwmWrite(led2, 128);
+		//pwmWrite(PWM_1, 128);
+		//pwmWrite(PWM_2, 128);
 		//Serial.println("8-Bit PWM");
 		//delay(1000);
 
 		//setting the duty to 50% with the highest possible resolution that 
 		//can be applied to the timer (up to 16 bit). 1/2 of 65536 is 32768.
-		pwmWriteHR(led, 32768);
-		pwmWriteHR(led2, 32768);
+		pwmWriteHR(PWM_1, 32768);
+		pwmWriteHR(PWM_2, 32768);
 		Serial.println("High Resolution PWM");
 		delay(1000);
 
 }
-
+void process_msg(char rcv_ch)
+{
+	rcv_ch = Serial.read();
+	if (rcv_ch == 's')
+	{
+		Serial.println("try to stop");
+		pinMode(PWM_1, INPUT);
+		pinMode(PWM_2, INPUT);
+	}
+	if (rcv_ch == 'f')
+	{
+		Serial.println("try to go forward");
+		pinMode(PWM_1, OUTPUT);
+		pinMode(PWM_2, OUTPUT);
+		digitalWrite(DIR_1, 1);
+		digitalWrite(DIR_2, 0);
+	}
+	if (rcv_ch == 'l')
+	{
+		Serial.println("try to turn left");
+		pinMode(PWM_1, OUTPUT);
+		pinMode(PWM_2, OUTPUT);
+		digitalWrite(DIR_1, 0);
+		digitalWrite(DIR_2, 0);
+	}
+	if (rcv_ch == 'r')
+	{
+		Serial.println("try to turn right");
+		pinMode(PWM_1, OUTPUT);
+		pinMode(PWM_2, OUTPUT);
+		digitalWrite(DIR_1, 1);
+		digitalWrite(DIR_2, 1);
+	}
+	if (rcv_ch == 'b')
+	{
+		Serial.println("try to run back");
+		pinMode(PWM_1, OUTPUT);
+		pinMode(PWM_2, OUTPUT);
+		digitalWrite(DIR_1, 0);
+		digitalWrite(DIR_2, 1);
+	}
+}
 void loop()
 {
-	Serial.println("looping");
-	digitalWrite(2, 1);
-	digitalWrite(3, 1);
+	char rcv_ch = 0;
+	if (Serial.available() > 0)
+	{
+		process_msg(rcv_ch);
+	}
+
 }
