@@ -40,7 +40,7 @@ This example runs on mega and uno.
 void setup()
 {
 	InitTimersSafe(); //initialize all timers except for 0, to save time keeping functions
-	Serial.begin(115200);
+	Serial.begin(9600);
 	Serial.println();
 
 	//demonstrateFrequencysEffectOnResolution();
@@ -98,12 +98,15 @@ void process_msg(char rcv_ch)
 	rcv_ch = Serial.read();
 	if (rcv_ch == 's')
 	{
+		Serial.println("ok");
 		Serial.println("try to stop");
 		pinMode(PWM_1, INPUT);
 		pinMode(PWM_2, INPUT);
+		
 	}
 	if (rcv_ch == 'f')
 	{
+		Serial.println("ok");
 		Serial.println("try to go forward");
 		pinMode(PWM_1, OUTPUT);
 		pinMode(PWM_2, OUTPUT);
@@ -112,6 +115,7 @@ void process_msg(char rcv_ch)
 	}
 	if (rcv_ch == 'l')
 	{
+		Serial.println("ok");
 		Serial.println("try to turn left");
 		pinMode(PWM_1, OUTPUT);
 		pinMode(PWM_2, OUTPUT);
@@ -120,6 +124,7 @@ void process_msg(char rcv_ch)
 	}
 	if (rcv_ch == 'r')
 	{
+		Serial.println("ok");
 		Serial.println("try to turn right");
 		pinMode(PWM_1, OUTPUT);
 		pinMode(PWM_2, OUTPUT);
@@ -128,6 +133,7 @@ void process_msg(char rcv_ch)
 	}
 	if (rcv_ch == 'b')
 	{
+		Serial.println("ok");
 		Serial.println("try to run back");
 		pinMode(PWM_1, OUTPUT);
 		pinMode(PWM_2, OUTPUT);
