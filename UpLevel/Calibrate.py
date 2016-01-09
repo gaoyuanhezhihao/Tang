@@ -37,6 +37,7 @@ class CarAdmin():
         self.debug_left_pwm_buf = 0
         self.debug_right_pwm_buf = 0
         self.cycle_pair = {'f': 'b', 'b': 'f'}
+        self.cycle_state = 0
         self.last_cycle_time = 0
         self.state = 0
         self.last_order = 0
@@ -66,6 +67,7 @@ class CarAdmin():
         self.state = 'cycle'
         self.Send_Direct_Order(order='f')
         self.last_cycle_time = time.time()
+        self.cycle_state = 'f'
 
     def Send_Direct_Order(self, PWM_left=None, PWM_right=None, order=None):
         if(order is None):
