@@ -37,16 +37,17 @@ This example runs on mega and uno.
 //use pin 11 on the mega for this example to work
 #define PWM_1 9
 #define PWM_2 10
+char first = 1;
 void setup()
 {
 	InitTimersSafe(); //initialize all timers except for 0, to save time keeping functions
 	Serial.begin(9600);
 	Serial.println();
 
-	//demonstrateFrequencysEffectOnResolution();
-	settingHighResolutionDuty();
 	pinMode(DIR_1, OUTPUT);
 	pinMode(DIR_2, OUTPUT);
+	pinMode(PWM_1, INPUT);
+	pinMode(PWM_2, INPUT);
 }
 
 void demonstrateFrequencysEffectOnResolution()
@@ -90,7 +91,7 @@ void settingHighResolutionDuty()
 		pwmWriteHR(PWM_1, 32768);
 		pwmWriteHR(PWM_2, 32768);
 		Serial.println("High Resolution PWM");
-		delay(1000);
+		//delay(1000);
 
 }
 void process_msg(char rcv_ch)
@@ -103,6 +104,11 @@ void process_msg(char rcv_ch)
 		pinMode(PWM_1, INPUT);
 		pinMode(PWM_2, INPUT);
 		
+	}
+	if (first && (rcv_ch == 'f' || rcv_ch == 'b' || rcv_ch == 'l' || rcv_ch == 'r'))
+	{
+		first = 0;
+		settingHighResolutionDuty();
 	}
 	if (rcv_ch == 'f')
 	{
