@@ -69,16 +69,31 @@ class CarAdmin():
         self.last_cycle_time = time.time()
         self.cycle_state = 'f'
 
-    def Send_Direct_Order(self, PWM_left=None, PWM_right=None, order=None):
+    def update_pwm(self):
+        self.pwm = int(self.pwm_entry.get())
+        print "Your pwm:%s" % self.pwm_entry.get()
+        self.Send_Direct_Order(order='p', data1=self.pwm/256,
+                               data2=self.pwm % 256)
+
+    def Send_Direct_Order(self, PWM_left=None, PWM_right=None, order=None,
+                          data1=None, data2=None):
         if(order is None):
             msg = '$DCR:' + str(PWM_left) + str(-500) + \
                 ',' + str(PWM_right) + str(-500) + '!'
             self.port.write(msg)
             print msg, '\n'
         else:
-            self.port.write(order)
+            if data1 is None or data2 is None:
+                data1 = 0x00
+                data2 = 0x00
+            self.port.write(['H'])
+            self.port.write([order])
+            self.port.write([data1])
+            self.port.write([data2])
             self.last_order = order
-            self.send_msg_time =time.time()
+            self.last_data1 = data1
+            self.last_data2 = data2
+            self.send_msg_time = time.time()
         return 0
 
     def serial_ports(self):
@@ -102,7 +117,9 @@ class CarAdmin():
 
     def check_last_send(self):
         if time.time() - self.send_msg_time > 0.05 and self.last_order != 0:
-            self.Send_Direct_Order(order=self.last_order)
+            self.Send_Direct_Order(order=self.last_order,
+                                   data1=self.last_data1,
+                                   data2=self.last_data2)
             self.send_msg_time = time.time()
 
     def rcv_uart_msg(self):
@@ -142,6 +159,15 @@ class CarAdmin():
         self.Cycle_button = Tkinter.Button(
             self.calibra_panel, text="cycle", command=self.cycle)
         self.Cycle_button.pack()
+
+        self.pwm_set = Tkinter.StringVar()
+        self.pwm_entry = Tkinter.Entry(
+            self.calibra_panel, textvariable=self.pwm_set)
+        self.pwm_entry.pack()
+
+        self.pwm_update_btn = Tkinter.Button(
+            self.calibra_panel, text="pwm change", command=self.update_pwm)
+        self.pwm_update_btn.pack()
         while True:
             self.calibra_panel.update()
             self.check_last_send()

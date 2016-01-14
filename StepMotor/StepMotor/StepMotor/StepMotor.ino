@@ -119,6 +119,8 @@ void process_msg(char rcv_ch[3])
 		SetPinFrequency(PWM_2, pwm);
 		pwmWriteHR(PWM_1, 32768);
 		pwmWriteHR(PWM_2, 32768);
+		Serial.println("ok");
+		Serial.println("pwm changed");
 		break;
 	case 's':
 		Serial.println("ok");
