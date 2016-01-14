@@ -37,7 +37,11 @@ This example runs on mega and uno.
 //use pin 11 on the mega for this example to work
 #define PWM_1 9
 #define PWM_2 10
+#define TOTAL_BYTES 4
+
+const char HEADER = 'H';
 char first = 1;
+unsigned int pwm = 0;
 void setup()
 {
 	InitTimersSafe(); //initialize all timers except for 0, to save time keeping functions
@@ -50,25 +54,25 @@ void setup()
 	pinMode(PWM_2, INPUT);
 }
 
-void demonstrateFrequencysEffectOnResolution()
-{
-	Serial.println("As frequency increases, resolution will decrease...");
-	for (int i = 1; i < 10000; i += 10)
-	{
-		SetPinFrequency(PWM_1, i);  //setting the frequency
-
-		uint16_t frequency = Timer1_GetFrequency();
-		uint16_t decimalResolution = Timer1_GetTop() + 1;
-		uint16_t binaryResolution = GetPinResolution(PWM_1); //this number will be inaccurately low because the float is being truncated to a int
-
-		char strOut[75];
-		sprintf(strOut, "Frequency: %u Hz\r\n Number of Possible Duties: %u\r\n Resolution: %u bit\r\n", frequency, decimalResolution, binaryResolution);
-
-		Serial.println(strOut);
-	}
-
-	Serial.println("...Finished");
-}
+//void demonstrateFrequencysEffectOnResolution()
+//{
+//	Serial.println("As frequency increases, resolution will decrease...");
+//	for (int i = 1; i < 10000; i += 10)
+//	{
+//		SetPinFrequency(PWM_1, i);  //setting the frequency
+//
+//		uint16_t frequency = Timer1_GetFrequency();
+//		uint16_t decimalResolution = Timer1_GetTop() + 1;
+//		uint16_t binaryResolution = GetPinResolution(PWM_1); //this number will be inaccurately low because the float is being truncated to a int
+//
+//		char strOut[75];
+//		sprintf(strOut, "Frequency: %u Hz\r\n Number of Possible Duties: %u\r\n Resolution: %u bit\r\n", frequency, decimalResolution, binaryResolution);
+//
+//		Serial.println(strOut);
+//	}
+//
+//	Serial.println("...Finished");
+//}
 
 void settingHighResolutionDuty()
 {
@@ -94,65 +98,128 @@ void settingHighResolutionDuty()
 		//delay(1000);
 
 }
-void process_msg(char rcv_ch)
+void process_msg(char rcv_ch[3])
 {
-	rcv_ch = Serial.read();
-	if (rcv_ch == 's')
-	{
-		Serial.println("ok");
-		Serial.println("try to stop");
-		pinMode(PWM_1, INPUT);
-		pinMode(PWM_2, INPUT);
-		
-	}
-	if (first && (rcv_ch == 'f' || rcv_ch == 'b' || rcv_ch == 'l' || rcv_ch == 'r'))
+	unsigned int pwm = 0;
+	if (first && (rcv_ch[0] == 'f' || rcv_ch[0] == 'b' || rcv_ch[0] == 'l' || rcv_ch[0] == 'r'))
 	{
 		first = 0;
 		settingHighResolutionDuty();
 	}
-	if (rcv_ch == 'f')
+	switch (rcv_ch[0])
 	{
+	case 'p':
+		Serial.println("waiting");
+		pwm = rcv_ch[1] * 256;
+		pwm += (unsigned char) rcv_ch[2];
+		Serial.print("rcv:pwm=");
+		Serial.print(pwm);
+
+		SetPinFrequency(PWM_1, pwm);
+		SetPinFrequency(PWM_2, pwm);
+		pwmWriteHR(PWM_1, 32768);
+		pwmWriteHR(PWM_2, 32768);
+		break;
+	case 's':
+		Serial.println("ok");
+		Serial.println("try to stop");
+		pinMode(PWM_1, INPUT);
+		pinMode(PWM_2, INPUT);
+		break;
+	case 'f':
 		Serial.println("ok");
 		Serial.println("try to go forward");
 		pinMode(PWM_1, OUTPUT);
 		pinMode(PWM_2, OUTPUT);
 		digitalWrite(DIR_1, 1);
 		digitalWrite(DIR_2, 0);
-	}
-	if (rcv_ch == 'l')
-	{
+		break;
+	case 'l':
 		Serial.println("ok");
 		Serial.println("try to turn left");
 		pinMode(PWM_1, OUTPUT);
 		pinMode(PWM_2, OUTPUT);
 		digitalWrite(DIR_1, 0);
 		digitalWrite(DIR_2, 0);
-	}
-	if (rcv_ch == 'r')
-	{
+		break;
+	case 'r':
 		Serial.println("ok");
 		Serial.println("try to turn right");
 		pinMode(PWM_1, OUTPUT);
 		pinMode(PWM_2, OUTPUT);
 		digitalWrite(DIR_1, 1);
 		digitalWrite(DIR_2, 1);
-	}
-	if (rcv_ch == 'b')
-	{
+		break;
+	case 'b':
 		Serial.println("ok");
 		Serial.println("try to run back");
 		pinMode(PWM_1, OUTPUT);
 		pinMode(PWM_2, OUTPUT);
 		digitalWrite(DIR_1, 0);
 		digitalWrite(DIR_2, 1);
+		break;
+	default:
+		break;
 	}
+	//if (rcv_ch == 's')
+	//{
+	//	Serial.println("ok");
+	//	Serial.println("try to stop");
+	//	pinMode(PWM_1, INPUT);
+	//	pinMode(PWM_2, INPUT);
+	//	
+	//}
+
+	//if (rcv_ch == 'f')
+	//{
+	//	Serial.println("ok");
+	//	Serial.println("try to go forward");
+	//	pinMode(PWM_1, OUTPUT);
+	//	pinMode(PWM_2, OUTPUT);
+	//	digitalWrite(DIR_1, 1);
+	//	digitalWrite(DIR_2, 0);
+	//}
+	//if (rcv_ch == 'l')
+	//{
+	//	Serial.println("ok");
+	//	Serial.println("try to turn left");
+	//	pinMode(PWM_1, OUTPUT);
+	//	pinMode(PWM_2, OUTPUT);
+	//	digitalWrite(DIR_1, 0);
+	//	digitalWrite(DIR_2, 0);
+	//}
+	//if (rcv_ch == 'r')
+	//{
+	//	Serial.println("ok");
+	//	Serial.println("try to turn right");
+	//	pinMode(PWM_1, OUTPUT);
+	//	pinMode(PWM_2, OUTPUT);
+	//	digitalWrite(DIR_1, 1);
+	//	digitalWrite(DIR_2, 1);
+	//}
+	//if (rcv_ch == 'b')
+	//{
+	//	Serial.println("ok");
+	//	Serial.println("try to run back");
+	//	pinMode(PWM_1, OUTPUT);
+	//	pinMode(PWM_2, OUTPUT);
+	//	digitalWrite(DIR_1, 0);
+	//	digitalWrite(DIR_2, 1);
+	//}
 }
 void loop()
 {
-	char rcv_ch = 0;
-	if (Serial.available() > 0)
+	char rcv_ch[3] = {0};
+	if (Serial.available() >= TOTAL_BYTES)
 	{
-		process_msg(rcv_ch);
+		char tag = Serial.read();
+		if (tag == HEADER)
+		{
+			rcv_ch[0] = Serial.read();
+			rcv_ch[1] = Serial.read();
+			rcv_ch[2] = Serial.read();
+			process_msg(rcv_ch);
+		}
 	}
 
 }
