@@ -38,10 +38,16 @@ This example runs on mega and uno.
 #define PWM_1 9
 #define PWM_2 10
 #define TOTAL_BYTES 4
+#define BEST_PWM 4800
+#define START_FIRST_PWM 3200
+#define START_STEPS 20
+#define START_PWM_STEP (( BEST_PWM - START_FIRST_PWM)/START_STEPS)
+#define START_TIME 2000 //2000ms = 2s
+#define STEP_TIME (START_TIME/START_STEPS)
 
+char state = 's';
 const char HEADER = 'H';
-char first = 1;
-unsigned int pwm = 0;
+char stoped = 1;
 void setup()
 {
 	InitTimersSafe(); //initialize all timers except for 0, to save time keeping functions
@@ -74,11 +80,11 @@ void setup()
 //	Serial.println("...Finished");
 //}
 
-void settingHighResolutionDuty()
+void settingHighResolutionDuty(unsigned int pwm)
 {
-	SetPinFrequency(PWM_1, 5000); //setting the frequency to 10 Hz
-	SetPinFrequency(PWM_2, 5000);
-	Serial.println("\r\npwmWrite() and pwmWriteHR() are identical except for the valid range of inputs.\r\nThe following loop calls both functions to produce the same result on the \r\nLED pin. The pin should to run 10Hz at 50% duty regardless of the function called.\r\n");
+	SetPinFrequency(PWM_1, pwm); //setting the frequency to 10 Hz
+	SetPinFrequency(PWM_2, pwm);
+	//Serial.println("\r\npwmWrite() and pwmWriteHR() are identical except for the valid range of inputs.\r\nThe following loop calls both functions to produce the same result on the \r\nLED pin. The pin should to run 10Hz at 50% duty regardless of the function called.\r\n");
 
 	//the PWM_1 should flicker (10Hz 50% duty) for 1 second before calling
 	//the other function. This demonstrates the use of pwmWriteHR() and how its
@@ -94,41 +100,93 @@ void settingHighResolutionDuty()
 		//can be applied to the timer (up to 16 bit). 1/2 of 65536 is 32768.
 		pwmWriteHR(PWM_1, 32768);
 		pwmWriteHR(PWM_2, 32768);
-		Serial.println("High Resolution PWM");
+		//Serial.println("High Resolution PWM");
 		//delay(1000);
 
 }
-void process_msg(char rcv_ch[3])
+void loose_start_car(char order, unsigned int last_pwm, unsigned int first_pwm, unsigned int step)
 {
-	unsigned int pwm = 0;
-	if (first && (rcv_ch[0] == 'f' || rcv_ch[0] == 'b' || rcv_ch[0] == 'l' || rcv_ch[0] == 'r'))
+	int i = 0;
+	settingHighResolutionDuty(first_pwm);
+	change_wheel_direction(order);
+	pinMode(PWM_1, OUTPUT);
+	pinMode(PWM_2, OUTPUT);
+	Serial.print(i*step + first_pwm);
+	Serial.print(";");
+	for (i = 0; i < START_STEPS; i++)
 	{
-		first = 0;
-		settingHighResolutionDuty();
+		settingHighResolutionDuty(i*step + first_pwm);
+		Serial.print(i*step + first_pwm);
+		Serial.print(";");
+		delay(STEP_TIME);
 	}
-	switch (rcv_ch[0])
-	{
-	case 'p':
-		Serial.println("waiting");
-		pwm = rcv_ch[1] * 256;
-		pwm += (unsigned char) rcv_ch[2];
-		Serial.print("rcv:pwm=");
-		Serial.print(pwm);
+	settingHighResolutionDuty(last_pwm);
+}
+void change_pwm(char *rcv_ch, unsigned int *p_pwm, unsigned int *p_first_pwm, unsigned int *p_pwm_step)
+{
+	*p_pwm = rcv_ch[1] * 256;
+	*p_pwm += (unsigned char)rcv_ch[2];
+	Serial.print("rcv:pwm=");
+	Serial.print(*p_pwm);
+	*p_first_pwm = (*p_pwm) * 2 /3 ;
+	*p_pwm_step = (*p_pwm - *p_first_pwm) / START_STEPS;
+	Serial.println("start_pwm:");
+	Serial.print(*p_first_pwm);
 
-		SetPinFrequency(PWM_1, pwm);
-		SetPinFrequency(PWM_2, pwm);
-		pwmWriteHR(PWM_1, 32768);
-		pwmWriteHR(PWM_2, 32768);
-		Serial.println("ok");
-		Serial.println("pwm changed");
-		break;
+	SetPinFrequency(PWM_1, *p_pwm);
+	SetPinFrequency(PWM_2, *p_pwm);
+	pwmWriteHR(PWM_1, 32768);
+	pwmWriteHR(PWM_2, 32768);
+	Serial.println("ok\n");
+	Serial.println("pwm changed\n");
+}
+void change_state(char order, unsigned int pwm, unsigned int start_pwm, unsigned pwm_step)
+{
+	//char active_states[5] = {'f', 'b', 'r', 'l', '\0';
+	//char *p_state = "fbrl";
+	char *active_states = "fbrl";
+
+	if (state == 's' && (order == 'f' || order == 'b' || order == 'l' || order == 'r'))
+	{
+		stoped = 0;
+		int i = 0;
+		loose_start_car(order, pwm, start_pwm, pwm_step);
+	}
+	if (order == 's')
+	{
+		change_wheel_direction(order);
+	}
+	else if (order != state)
+	{
+		while (*active_states != '\0')
+		{
+			Serial.print(*active_states);
+			if (*active_states == order)
+			{
+				// soft change
+				change_wheel_direction('s');
+				delay(100); //wait 100ms=0.1s
+				change_wheel_direction(order);
+				break;
+			}
+			active_states++;
+		}
+	}
+}
+void change_wheel_direction(char order)
+{
+	switch (order)
+	{
 	case 's':
-		Serial.println("ok");
-		Serial.println("try to stop");
+		state = 's';
+		Serial.println("ok\n");
+		Serial.println("try to stop\n");
+		stoped = 1;
 		pinMode(PWM_1, INPUT);
 		pinMode(PWM_2, INPUT);
 		break;
 	case 'f':
+		state = 'f';
 		Serial.println("ok");
 		Serial.println("try to go forward");
 		pinMode(PWM_1, OUTPUT);
@@ -137,6 +195,7 @@ void process_msg(char rcv_ch[3])
 		digitalWrite(DIR_2, 0);
 		break;
 	case 'l':
+		state = 'l';
 		Serial.println("ok");
 		Serial.println("try to turn left");
 		pinMode(PWM_1, OUTPUT);
@@ -145,6 +204,7 @@ void process_msg(char rcv_ch[3])
 		digitalWrite(DIR_2, 0);
 		break;
 	case 'r':
+		state = 'r';
 		Serial.println("ok");
 		Serial.println("try to turn right");
 		pinMode(PWM_1, OUTPUT);
@@ -153,6 +213,7 @@ void process_msg(char rcv_ch[3])
 		digitalWrite(DIR_2, 1);
 		break;
 	case 'b':
+		state = 'b';
 		Serial.println("ok");
 		Serial.println("try to run back");
 		pinMode(PWM_1, OUTPUT);
@@ -163,51 +224,21 @@ void process_msg(char rcv_ch[3])
 	default:
 		break;
 	}
-	//if (rcv_ch == 's')
-	//{
-	//	Serial.println("ok");
-	//	Serial.println("try to stop");
-	//	pinMode(PWM_1, INPUT);
-	//	pinMode(PWM_2, INPUT);
-	//	
-	//}
-
-	//if (rcv_ch == 'f')
-	//{
-	//	Serial.println("ok");
-	//	Serial.println("try to go forward");
-	//	pinMode(PWM_1, OUTPUT);
-	//	pinMode(PWM_2, OUTPUT);
-	//	digitalWrite(DIR_1, 1);
-	//	digitalWrite(DIR_2, 0);
-	//}
-	//if (rcv_ch == 'l')
-	//{
-	//	Serial.println("ok");
-	//	Serial.println("try to turn left");
-	//	pinMode(PWM_1, OUTPUT);
-	//	pinMode(PWM_2, OUTPUT);
-	//	digitalWrite(DIR_1, 0);
-	//	digitalWrite(DIR_2, 0);
-	//}
-	//if (rcv_ch == 'r')
-	//{
-	//	Serial.println("ok");
-	//	Serial.println("try to turn right");
-	//	pinMode(PWM_1, OUTPUT);
-	//	pinMode(PWM_2, OUTPUT);
-	//	digitalWrite(DIR_1, 1);
-	//	digitalWrite(DIR_2, 1);
-	//}
-	//if (rcv_ch == 'b')
-	//{
-	//	Serial.println("ok");
-	//	Serial.println("try to run back");
-	//	pinMode(PWM_1, OUTPUT);
-	//	pinMode(PWM_2, OUTPUT);
-	//	digitalWrite(DIR_1, 0);
-	//	digitalWrite(DIR_2, 1);
-	//}
+}
+void process_msg(char rcv_ch[3])
+{
+	static unsigned int pwm = BEST_PWM;
+	static unsigned int starting_first_pwm = START_FIRST_PWM;
+	static unsigned int starting_pwm_step = START_PWM_STEP;
+	switch (rcv_ch[0])
+	{
+	case 'p':
+		change_pwm(rcv_ch, &pwm, & starting_first_pwm, & starting_pwm_step);
+		break;
+	default:
+		change_state(rcv_ch[0], pwm, starting_first_pwm, starting_pwm_step);
+		break;
+	}
 }
 void loop()
 {
