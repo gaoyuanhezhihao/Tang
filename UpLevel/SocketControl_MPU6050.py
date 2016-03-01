@@ -41,6 +41,7 @@ class CarSocketAdmin(CarAdmin):
         self.angle_over_360 = 0
         self.stop_angle_over_360 = 0
         self.stop_angle_range = [[0,0],[0,0]]
+        self.sock_client = 0
 
     def TouchTheCar(self):
 # if time.time() - self.LastAckTime > 1:
@@ -79,13 +80,13 @@ class CarSocketAdmin(CarAdmin):
         s.listen(1)
         while True:
             print 'Listening at', s.getsockname()
-            sc, sockname = s.accept()
+            self.sock_client, sockname = s.accept()
             print 'We have accepted a connection from ', sockname
-            print 'Socket connects', sc.getsockname(), 'and', sc.getpeername()
+            print 'Socket connects', self.sock_client.getsockname(), 'and', self.sock_client.getpeername()
             while True:
                 try:
-                    message = sc.recv(1024)
-                    sc.sendall("ok\n")
+                    message = self.sock_client.recv(1024)
+                    self.sock_client.sendall("ok\n")
                     print "recv", repr(message), '\n'
                     command_tokens = message.split('\n')
                     if command_tokens[0] in ['g', 'f', 's', 'b']:
@@ -97,8 +98,8 @@ class CarSocketAdmin(CarAdmin):
                         self.turning_angle = int(command_tokens[1])
                 except Exception, e:
                     print "*** connection failed.", e, "\n Delete the couple ***"
-                    sc.shutdown(socket.SHUT_RDWR)
-                    sc.close()
+                    self.sock_client.shutdown(socket.SHUT_RDWR)
+                    self.sock_client.close()
                     break
 
     def ReadMPU6050(self):
@@ -147,10 +148,13 @@ class CarSocketAdmin(CarAdmin):
                         self.GlobalMem = 's'
                         self.GlobalFlag = 1
                         print "car stop turn\n"
+                        self.sock_client.sendall(self.mpu6050_turing_side+"_ok\n")
                         break
                     if self.if_order_changed():
                         print "car stop turn by order changed\n"
+                        self.sock_client.sendall(self.mpu6050_turing_side+"_fail\n")
                         break
+
     def calculate_stop_range(self):
         if self.mpu6050_turing_side == 'l':
             stop_angle_point = self.mpu6050_start_angle + self.turning_angle
