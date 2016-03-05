@@ -58,6 +58,10 @@ void setup()
 	pinMode(DIR_2, OUTPUT);
 	pinMode(PWM_1, INPUT);
 	pinMode(PWM_2, INPUT);
+	pinMode(ENA_1, OUTPUT);
+	pinMode(ENA_2, OUTPUT);
+	digitalWrite(ENA_1, LOW);
+	digitalWrite(ENA_2, LOW);
 }
 
 //void demonstrateFrequencysEffectOnResolution()
@@ -146,32 +150,34 @@ void change_state(char order, unsigned int pwm, unsigned int start_pwm, unsigned
 	//char *p_state = "fbrl";
 	char *active_states = "fbrl";
 
-	if (state == 's' && (order == 'f' || order == 'b' || order == 'l' || order == 'r'))
+	if (state == 's' && (order == 'f' || order == 'b' /*|| order == 'l' || order == 'r'*/))
 	{
 		stoped = 0;
 		int i = 0;
 		loose_start_car(order, pwm, start_pwm, pwm_step);
+		return;
 	}
-	if (order == 's')
-	{
-		change_wheel_direction(order);
-	}
-	else if (order != state)
-	{
-		while (*active_states != '\0')
-		{
-			Serial.print(*active_states);
-			if (*active_states == order)
-			{
-				// soft change
-				change_wheel_direction('s');
-				delay(100); //wait 100ms=0.1s
-				change_wheel_direction(order);
-				break;
-			}
-			active_states++;
-		}
-	}
+	change_wheel_direction(order);
+	//if (order == 's')
+	//{
+	//	change_wheel_direction(order);
+	//}
+	//else if (order != state)
+	//{
+	//	while (*active_states != '\0')
+	//	{
+	//		Serial.print(*active_states);
+	//		if (*active_states == order)
+	//		{
+	//			// soft change
+	//			change_wheel_direction('s');
+	//			delay(100); //wait 100ms=0.1s
+	//			change_wheel_direction(order);
+	//			break;
+	//		}
+	//		active_states++;
+	//	}
+	//}
 }
 void change_wheel_direction(char order)
 {
@@ -184,6 +190,11 @@ void change_wheel_direction(char order)
 		stoped = 1;
 		pinMode(PWM_1, INPUT);
 		pinMode(PWM_2, INPUT);
+		delay(500);//brake 500ms
+		digitalWrite(ENA_1, LOW);
+		digitalWrite(ENA_2, LOW);
+		//pwmWriteHR(PWM_1, 65535);
+		//pwmWriteHR(PWM_2, 65535);
 		break;
 	case 'f':
 		state = 'f';
@@ -191,6 +202,10 @@ void change_wheel_direction(char order)
 		Serial.println("try to go forward");
 		pinMode(PWM_1, OUTPUT);
 		pinMode(PWM_2, OUTPUT);
+		digitalWrite(ENA_1, HIGH);
+		digitalWrite(ENA_2, HIGH);
+		//pwmWriteHR(PWM_1, 32768);
+		//pwmWriteHR(PWM_2, 32768);
 		digitalWrite(DIR_1, 1);
 		digitalWrite(DIR_2, 0);
 		break;
@@ -200,6 +215,10 @@ void change_wheel_direction(char order)
 		Serial.println("try to turn left");
 		pinMode(PWM_1, OUTPUT);
 		pinMode(PWM_2, OUTPUT);
+		digitalWrite(ENA_1, HIGH);
+		digitalWrite(ENA_2, HIGH);
+		//pwmWriteHR(PWM_1, 32768);
+		//pwmWriteHR(PWM_2, 32768);
 		digitalWrite(DIR_1, 0);
 		digitalWrite(DIR_2, 0);
 		break;
@@ -209,6 +228,8 @@ void change_wheel_direction(char order)
 		Serial.println("try to turn right");
 		pinMode(PWM_1, OUTPUT);
 		pinMode(PWM_2, OUTPUT);
+		digitalWrite(ENA_1, HIGH);
+		digitalWrite(ENA_2, HIGH);
 		digitalWrite(DIR_1, 1);
 		digitalWrite(DIR_2, 1);
 		break;
@@ -218,6 +239,8 @@ void change_wheel_direction(char order)
 		Serial.println("try to run back");
 		pinMode(PWM_1, OUTPUT);
 		pinMode(PWM_2, OUTPUT);
+		digitalWrite(ENA_1, HIGH);
+		digitalWrite(ENA_2, HIGH);
 		digitalWrite(DIR_1, 0);
 		digitalWrite(DIR_2, 1);
 		break;
