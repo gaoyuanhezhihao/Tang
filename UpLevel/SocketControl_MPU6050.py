@@ -157,12 +157,20 @@ class CarSocketAdmin(CarAdmin):
                         self.GlobalFlag = 1
                         logger.info("car stop turn")
                         print "car stop turn\n"
-                        self.sock_client.sendall(self.mpu6050_turing_side+"_ok\n")
+                        try:
+                            self.sock_client.sendall(self.mpu6050_turing_side+"_ok\n")
+                        except socket.error, e:
+                            logger.error("***ReadMPU6050: connection failed, " + str(e))
+                            print "ReadMPU6050: connection failed"
                         break
                     if self.if_order_changed():
-                        logger.info("car stop turn by order changed")
-                        print "car stop turn by order changed\n"
-                        self.sock_client.sendall(self.mpu6050_turing_side+"_fail\n")
+                        logger.info("car stop turn by stop order")
+                        print "car stop turn by stop order\n"
+                        try:
+                            self.sock_client.sendall(self.mpu6050_turing_side+"_fail\n")
+                        except socket.error, e:
+                            logger.error("***ReadMPU6050: connection failed, " + str(e))
+                            print "ReadMPU6050: connection failed"
                         break
 
     def calculate_stop_range(self):
@@ -208,7 +216,8 @@ class CarSocketAdmin(CarAdmin):
             raise
 
     def if_order_changed(self):
-        if self.Order_Sock_MPU6050 != 0:
+        if self.Order_Sock_MPU6050 == 's':
+            self.Order_Sock_MPU6050 = 0;
             return True
         return False
 
