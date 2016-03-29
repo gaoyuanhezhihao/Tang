@@ -42,7 +42,7 @@ This example runs on mega and uno.
 #define START_FIRST_PWM 3200
 #define START_STEPS 20
 #define START_PWM_STEP (( BEST_PWM - START_FIRST_PWM)/START_STEPS)
-#define START_TIME 2000 //2000ms = 2s
+#define START_TIME 1000 //1000ms = 1s
 #define STEP_TIME (START_TIME/START_STEPS)
 
 char state = 's';
@@ -207,7 +207,7 @@ void change_wheel_direction(char order)
 		//pwmWriteHR(PWM_1, 32768);
 		//pwmWriteHR(PWM_2, 32768);
 		digitalWrite(DIR_1, 1);
-		digitalWrite(DIR_2, 0);
+		digitalWrite(DIR_2, 1);
 		break;
 	case 'l':
 		state = 'l';
@@ -219,7 +219,7 @@ void change_wheel_direction(char order)
 		digitalWrite(ENA_2, HIGH);
 		//pwmWriteHR(PWM_1, 32768);
 		//pwmWriteHR(PWM_2, 32768);
-		digitalWrite(DIR_1, 0);
+		digitalWrite(DIR_1, 1);
 		digitalWrite(DIR_2, 0);
 		break;
 	case 'r':
@@ -230,7 +230,7 @@ void change_wheel_direction(char order)
 		pinMode(PWM_2, OUTPUT);
 		digitalWrite(ENA_1, HIGH);
 		digitalWrite(ENA_2, HIGH);
-		digitalWrite(DIR_1, 1);
+		digitalWrite(DIR_1, 0);
 		digitalWrite(DIR_2, 1);
 		break;
 	case 'b':
@@ -242,7 +242,7 @@ void change_wheel_direction(char order)
 		digitalWrite(ENA_1, HIGH);
 		digitalWrite(ENA_2, HIGH);
 		digitalWrite(DIR_1, 0);
-		digitalWrite(DIR_2, 1);
+		digitalWrite(DIR_2, 0);
 		break;
 	default:
 		break;

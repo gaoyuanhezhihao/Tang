@@ -3,6 +3,7 @@
 This car admin software is used for Tang's car.
 The down side is the arduino uno board.
 '''
+import logging
 import time
 import socket
 import serial
@@ -79,15 +80,20 @@ class CarSocketAdmin(CarAdmin):
         s.bind((SERVERIP, SERVERPORT))
         s.listen(1)
         while True:
-            print 'Listening at', s.getsockname()
+            logger.info('Listening at'+str(s.getsockname()))
+            # print 'Listening at', s.getsockname()
             self.sock_client, sockname = s.accept()
-            print 'We have accepted a connection from ', sockname
-            print 'Socket connects', self.sock_client.getsockname(), 'and', self.sock_client.getpeername()
+            logger.info( 'We have accepted a connection from '+str(sockname))
+            logger.info('Socket connects'+str(self.sock_client.getsockname())+ 'and'+str(self.sock_client.getpeername()))
+            # print 'We have accepted a connection from ', sockname
+            # print 'Socket connects', self.sock_client.getsockname(), 'and', self.sock_client.getpeername()
             while True:
                 try:
                     message = self.sock_client.recv(1024)
                     self.sock_client.sendall("ok\n")
-                    print "recv", repr(message), '\n'
+                    logger.info("socket replyed:"+"ok\n")
+                    logger.info("recv"+repr(message))
+                    # print "recv", repr(message), '\n'
                     command_tokens = message.split('\n')
                     if command_tokens[0] in ['g', 'f', 's', 'b']:
                         self.GlobalMem = command_tokens[0]
@@ -97,7 +103,8 @@ class CarSocketAdmin(CarAdmin):
                         self.Order_Sock_MPU6050 = command_tokens[0]
                         self.turning_angle = int(command_tokens[1])
                 except Exception, e:
-                    print "*** connection failed.", e, "\n Delete the couple ***"
+                    logger.error("*** connection failed."+str(e)+"\n Delete the couple ***")
+                    # print "*** connection failed.", e, "\n Delete the couple ***"
                     self.sock_client.shutdown(socket.SHUT_RDWR)
                     self.sock_client.close()
                     break
@@ -130,6 +137,7 @@ class CarSocketAdmin(CarAdmin):
                 self.calculate_stop_range()
                 self.GlobalMem = self.mpu6050_turing_side
                 self.GlobalFlag = 1
+                logger.info("car start turning\n")
                 print "car start turning\n"
                 while True:
                     # #update the attitude angle
@@ -147,10 +155,12 @@ class CarSocketAdmin(CarAdmin):
                     if self.check_if_stop():
                         self.GlobalMem = 's'
                         self.GlobalFlag = 1
+                        logger.info("car stop turn")
                         print "car stop turn\n"
                         self.sock_client.sendall(self.mpu6050_turing_side+"_ok\n")
                         break
                     if self.if_order_changed():
+                        logger.info("car stop turn by order changed")
                         print "car stop turn by order changed\n"
                         self.sock_client.sendall(self.mpu6050_turing_side+"_fail\n")
                         break
@@ -220,6 +230,7 @@ class CarSocketAdmin(CarAdmin):
             if self.GlobalFlag == 1:
                 self.GlobalFlag = 0
                 self.send_order(self.GlobalMem)
+            self.check_last_send()
             # self.TouchTheCar()
 
     def send_order(self, order):
@@ -236,5 +247,21 @@ class CarSocketAdmin(CarAdmin):
 if __name__ == '__main__':
     SERVERIP = '127.0.0.1'
     SERVERPORT = 8888
+    # create logger with 'spam_application'
+    logger = logging.getLogger('SocketControl_MPU6050')
+    logger.setLevel(logging.DEBUG)
+    # create file handler which logs even debug messages
+    fh = logging.FileHandler('SocketControl_MPU6050.log')
+    fh.setLevel(logging.DEBUG)
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR)
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+    # add the handlers to the logger
+    logger.addHandler(fh)
+    logger.addHandler(ch)
     Admin = CarSocketAdmin('CarCar', SERVERIP, SERVERPORT, 1)
     Admin.Run()

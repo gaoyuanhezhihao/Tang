@@ -7,11 +7,26 @@ import Tkinter
 import time
 import pickle
 import pdb
-
+import logging
 
 class CarAdmin():
 
     def __init__(self, name):
+        if __name__ == "main":
+            logger = logging.getLogger('Calibrate')
+            logger.setLevel(logging.DEBUG)
+            # create file handler which logs even debug messages
+            fh = logging.FileHandler('Calibrate.log')
+            fh.setLevel(logging.DEBUG)
+            # create console handler with a higher log level
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.ERROR)
+            # create formatter and add it to the handlers
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            fh.setFormatter(formatter)
+            ch.setFormatter(formatter)
+        else:
+            self.logger = logging.getLogger('SocketControl_MPU6050.Calibrate')
         self.name = name
         self.State = 's'
         self.RcvBuffer = []
@@ -81,7 +96,9 @@ class CarAdmin():
             msg = '$DCR:' + str(PWM_left) + str(-500) + \
                 ',' + str(PWM_right) + str(-500) + '!'
             self.port.write(msg)
-            print msg, '\n'
+            if __name__ == "__main__":
+                print msg, '\n'
+            self.logger.info("Send_Direct_Order:"+msg)
         else:
             if data1 is None or data2 is None:
                 data1 = 0x00
@@ -90,6 +107,7 @@ class CarAdmin():
             self.port.write([order])
             self.port.write([data1])
             self.port.write([data2])
+            self.logger.info("Send_Direct_Order:"+order)
             self.last_order = order
             self.last_data1 = data1
             self.last_data2 = data2
@@ -116,7 +134,7 @@ class CarAdmin():
         return result
 
     def check_last_send(self):
-        if time.time() - self.send_msg_time > 0.05 and self.last_order != 0:
+        if time.time() - self.send_msg_time > 0.7 and self.last_order != 0:
             self.Send_Direct_Order(order=self.last_order,
                                    data1=self.last_data1,
                                    data2=self.last_data2)
@@ -179,6 +197,5 @@ class CarAdmin():
                     self.last_cycle_time = time.time()
 
 if __name__ == '__main__':
-
     Admin = CarAdmin('Car')
     Admin.Run()

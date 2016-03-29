@@ -1,0 +1,1 @@
+If the car is in turning, but the socket connection is down. So after the turning completed, the thread managing the turning will send "l_ok\n" to the old socket, which will cause error.
