@@ -32,7 +32,7 @@ class CarSocketAdmin(CarAdmin):
         self.GlobalFlag = 0
         self.RightAckFlag = 0
         Port_name_MPU6050 = raw_input("Choose the MPU6050 port\n")
-        self.port_mpu6050 = serial.Serial(Port_name_MPU6050, 115200)
+        self.port_mpu6050 = serial.Serial(Port_name_MPU6050, 9600)
         self.angle = 0
         self.mpu6050_start_angle = 0
         self.turning_angle = 0
@@ -135,6 +135,7 @@ class CarSocketAdmin(CarAdmin):
                 # else:
                 #     self.mpu6050_stop_angle = self.angle - self.turning_angle
                 self.calculate_stop_range()
+                logger.info("stop range:"+str(self.stop_angle_range))
                 self.GlobalMem = self.mpu6050_turing_side
                 self.GlobalFlag = 1
                 logger.info("car start turning\n")
@@ -151,6 +152,7 @@ class CarSocketAdmin(CarAdmin):
                             if self.angle > 360:
                                 self.angle -= 360
                                 self.angle_over_360 = 1
+                            logger.info("mpu6050.angle:" + str(self.angle))
                     # #Continue turning?
                     if self.check_if_stop():
                         self.GlobalMem = 's'

@@ -38,7 +38,7 @@ This example runs on mega and uno.
 #define PWM_1 9
 #define PWM_2 10
 #define TOTAL_BYTES 4
-#define BEST_PWM 4800
+#define BEST_PWM 8000
 #define START_FIRST_PWM 3200
 #define START_STEPS 20
 #define START_PWM_STEP (( BEST_PWM - START_FIRST_PWM)/START_STEPS)
@@ -46,8 +46,10 @@ This example runs on mega and uno.
 #define STEP_TIME (START_TIME/START_STEPS)
 
 char state = 's';
+char last_state = '\0';
 const char HEADER = 'H';
 char stoped = 1;
+unsigned int turning_pwm = BEST_PWM / 2;
 void setup()
 {
 	InitTimersSafe(); //initialize all timers except for 0, to save time keeping functions
@@ -130,6 +132,7 @@ void change_pwm(char *rcv_ch, unsigned int *p_pwm, unsigned int *p_first_pwm, un
 {
 	*p_pwm = rcv_ch[1] * 256;
 	*p_pwm += (unsigned char)rcv_ch[2];
+	turning_pwm = *p_pwm / 2;
 	Serial.print("rcv:pwm=");
 	Serial.print(*p_pwm);
 	*p_first_pwm = (*p_pwm) * 2 /3 ;
@@ -143,6 +146,13 @@ void change_pwm(char *rcv_ch, unsigned int *p_pwm, unsigned int *p_first_pwm, un
 	pwmWriteHR(PWM_2, 32768);
 	Serial.println("ok\n");
 	Serial.println("pwm changed\n");
+}
+void update_pwm(unsigned int new_pwm)
+{
+	SetPinFrequency(PWM_1, new_pwm);
+	SetPinFrequency(PWM_2, new_pwm);
+	pwmWriteHR(PWM_1, 32768);
+	pwmWriteHR(PWM_2, 32768);
 }
 void change_state(char order, unsigned int pwm, unsigned int start_pwm, unsigned pwm_step)
 {
@@ -184,19 +194,24 @@ void change_wheel_direction(char order)
 	switch (order)
 	{
 	case 's':
+		last_state = state;
 		state = 's';
 		Serial.println("ok\n");
 		Serial.println("try to stop\n");
 		stoped = 1;
 		pinMode(PWM_1, INPUT);
 		pinMode(PWM_2, INPUT);
-		delay(500);//brake 500ms
+		if (last_state == 'r' || last_state == 'l')
+		{
+			delay(1000);//brake 1000ms
+		}
 		digitalWrite(ENA_1, LOW);
 		digitalWrite(ENA_2, LOW);
 		//pwmWriteHR(PWM_1, 65535);
 		//pwmWriteHR(PWM_2, 65535);
 		break;
 	case 'f':
+		last_state = state;
 		state = 'f';
 		Serial.println("ok");
 		Serial.println("try to go forward");
@@ -210,9 +225,11 @@ void change_wheel_direction(char order)
 		digitalWrite(DIR_2, 1);
 		break;
 	case 'l':
+		last_state = state;
 		state = 'l';
 		Serial.println("ok");
 		Serial.println("try to turn left");
+		update_pwm(turning_pwm);
 		pinMode(PWM_1, OUTPUT);
 		pinMode(PWM_2, OUTPUT);
 		digitalWrite(ENA_1, HIGH);
@@ -223,9 +240,11 @@ void change_wheel_direction(char order)
 		digitalWrite(DIR_2, 0);
 		break;
 	case 'r':
+		last_state = state;
 		state = 'r';
 		Serial.println("ok");
 		Serial.println("try to turn right");
+		update_pwm(turning_pwm);
 		pinMode(PWM_1, OUTPUT);
 		pinMode(PWM_2, OUTPUT);
 		digitalWrite(ENA_1, HIGH);
@@ -234,6 +253,7 @@ void change_wheel_direction(char order)
 		digitalWrite(DIR_2, 1);
 		break;
 	case 'b':
+		last_state = state;
 		state = 'b';
 		Serial.println("ok");
 		Serial.println("try to run back");
