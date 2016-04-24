@@ -25,7 +25,16 @@ while True:
                 else:
                     print "turning FAILED, recv:", rcv
                 continue
-            s.sendall(msg+'\n')
+            elif msg in "mnxy":
+                order = msg
+                time_of_push = raw_input("time of the push: ")
+                s.sendall(order + '\n' + time_of_push + '\n')
+            elif msg == 'p':
+                order = 'p'
+                pwm = raw_input("pwm your want: ")
+                s.sendall(order + '\n' + pwm + '\n')
+            else:
+                s.sendall(msg+'\n')
             print "recv:", s.recv(1024)
     except Exception, e:
         print "*** connection failed. \n", e, "\nRetrying"

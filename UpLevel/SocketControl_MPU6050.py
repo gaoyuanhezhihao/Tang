@@ -74,7 +74,8 @@ class CarSocketAdmin(CarAdmin):
 #                     del self.RcvBuffer[0]
 
     def SocketClient(self):
-        LegalOrder = ['g', 'l', 'r', 'f', 's', 'b']
+        time_to_push = 0
+        LegalOrder = ['g', 'l', 'r', 'f', 's', 'b', 'p']
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind((SERVERIP, SERVERPORT))
@@ -102,6 +103,12 @@ class CarSocketAdmin(CarAdmin):
                     elif command_tokens[0] in ['l', 'r'] and len(command_tokens) >= 2:
                         self.Order_Sock_MPU6050 = command_tokens[0]
                         self.turning_angle = int(command_tokens[1])
+                    elif command_tokens[0] == 'p' and len(command_tokens) >= 2:
+                        self.pwm *= float(command_tokens[1])
+                        self.Send_Direct_Order(order='p', data1=self.pwm/256, data2=self.pwm % 256)
+                    elif command_tokens[0] in "mnxy" and len(command_tokens) >= 2:
+                        time_to_push = int(command_tokens[1])
+                        self.Send_Secret_Order(order = command_tokens[0], data1=time_to_push/256, data2=time_to_push%256)
                 except Exception, e:
                     logger.error("*** connection failed."+str(e)+"\n Delete the couple ***")
                     # print "*** connection failed.", e, "\n Delete the couple ***"
@@ -237,6 +244,8 @@ class CarSocketAdmin(CarAdmin):
         ThreadMPU6050 = Thread(target=self.ReadMPU6050, args=())
         ThreadSocket.start()
         ThreadMPU6050.start()
+        self.pwm = 8000
+        self.Send_Direct_Order(order='p', data1=self.pwm/256, data2=self.pwm % 256)
         while True:
             if self.GlobalFlag == 1:
                 self.GlobalFlag = 0

@@ -154,12 +154,13 @@ void update_pwm(unsigned int new_pwm)
 	pwmWriteHR(PWM_1, 32768);
 	pwmWriteHR(PWM_2, 32768);
 }
-void change_state(char order, unsigned int pwm, unsigned int start_pwm, unsigned pwm_step)
+void change_state(char *rcv_ch, unsigned int pwm, unsigned int start_pwm, unsigned pwm_step)
 {
+	char order = rcv_ch[0];
+
 	//char active_states[5] = {'f', 'b', 'r', 'l', '\0';
 	//char *p_state = "fbrl";
 	char *active_states = "fbrl";
-
 	if (state == 's' && (order == 'f' || order == 'b' /*|| order == 'l' || order == 'r'*/))
 	{
 		stoped = 0;
@@ -167,7 +168,14 @@ void change_state(char order, unsigned int pwm, unsigned int start_pwm, unsigned
 		loose_start_car(order, pwm, start_pwm, pwm_step);
 		return;
 	}
-	change_wheel_direction(order);
+	if (order == 'm' || order == 'n' || order == 'x' || order == 'y')
+	{
+		push_car(rcv_ch);
+	}
+	else
+	{
+		change_wheel_direction(order);
+	}
 	//if (order == 's')
 	//{
 	//	change_wheel_direction(order);
@@ -188,6 +196,88 @@ void change_state(char order, unsigned int pwm, unsigned int start_pwm, unsigned
 	//		active_states++;
 	//	}
 	//}
+}
+void push_car(char *rcv_ch)
+{
+	char order = rcv_ch[0];
+	unsigned int time = 0;
+	time = rcv_ch[1] * 256;
+	time += (unsigned char)rcv_ch[2];
+	switch (order)
+	{
+	case 'm':// push forward
+		update_pwm(turning_pwm);
+		pinMode(PWM_1, OUTPUT);
+		pinMode(PWM_2, OUTPUT);
+		digitalWrite(ENA_1, HIGH);
+		digitalWrite(ENA_2, HIGH);
+		//pwmWriteHR(PWM_1, 32768);
+		//pwmWriteHR(PWM_2, 32768);
+		digitalWrite(DIR_1, 1);
+		digitalWrite(DIR_2, 1);
+		delay(10 * time);
+		stop_car();
+		Serial.println("m_ok");
+		break;
+	case 'n':// push backward.
+		update_pwm(turning_pwm);
+		pinMode(PWM_1, OUTPUT);
+		pinMode(PWM_2, OUTPUT);
+		digitalWrite(ENA_1, HIGH);
+		digitalWrite(ENA_2, HIGH);
+		digitalWrite(DIR_1, 0);
+		digitalWrite(DIR_2, 0);
+		delay(10 * time);
+		stop_car();
+		Serial.println("n_ok");
+		break;
+	case 'x':// push left.
+		update_pwm(turning_pwm);
+		pinMode(PWM_1, OUTPUT);
+		pinMode(PWM_2, OUTPUT);
+		digitalWrite(ENA_1, HIGH);
+		digitalWrite(ENA_2, HIGH);
+		//pwmWriteHR(PWM_1, 32768);
+		//pwmWriteHR(PWM_2, 32768);
+		digitalWrite(DIR_1, 1);
+		digitalWrite(DIR_2, 0);
+		delay(10 * time);
+		stop_car();
+		Serial.println("x_ok");
+		break;
+	case 'y':// push right.
+		update_pwm(turning_pwm);
+		pinMode(PWM_1, OUTPUT);
+		pinMode(PWM_2, OUTPUT);
+		digitalWrite(ENA_1, HIGH);
+		digitalWrite(ENA_2, HIGH);
+		digitalWrite(DIR_1, 0);
+		digitalWrite(DIR_2, 1);
+		delay(10 * time);
+		stop_car();
+		Serial.println("y_ok");
+		break;
+	default:
+		break;
+	}
+}
+void stop_car()
+{
+	last_state = state;
+	state = 's';
+	Serial.println("ok\n");
+	Serial.println("try to stop\n");
+	stoped = 1;
+	pinMode(PWM_1, INPUT);
+	pinMode(PWM_2, INPUT);
+	if (last_state == 'r' || last_state == 'l')
+	{
+		delay(1000);//brake 1000ms
+	}
+	digitalWrite(ENA_1, LOW);
+	digitalWrite(ENA_2, LOW);
+	//pwmWriteHR(PWM_1, 65535);
+	//pwmWriteHR(PWM_2, 65535);
 }
 void change_wheel_direction(char order)
 {
@@ -279,7 +369,7 @@ void process_msg(char rcv_ch[3])
 		change_pwm(rcv_ch, &pwm, & starting_first_pwm, & starting_pwm_step);
 		break;
 	default:
-		change_state(rcv_ch[0], pwm, starting_first_pwm, starting_pwm_step);
+		change_state(rcv_ch, pwm, starting_first_pwm, starting_pwm_step);
 		break;
 	}
 }

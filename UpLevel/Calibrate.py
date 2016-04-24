@@ -90,6 +90,26 @@ class CarAdmin():
         self.Send_Direct_Order(order='p', data1=self.pwm/256,
                                data2=self.pwm % 256)
 
+    def Send_Secret_Order(self, PWM_left=None, PWM_right=None, order=None,
+                          data1=None, data2=None):
+        if(order is None):
+            msg = '$DCR:' + str(PWM_left) + str(-500) + \
+                ',' + str(PWM_right) + str(-500) + '!'
+            self.port.write(msg)
+            if __name__ == "__main__":
+                print msg, '\n'
+            self.logger.info("Send_Direct_Order:"+msg)
+        else:
+            if data1 is None or data2 is None:
+                data1 = 0x00
+                data2 = 0x00
+            self.port.write(['H'])
+            self.port.write([order])
+            self.port.write([data1])
+            self.port.write([data2])
+            self.logger.info("Send_Secret_Order:"+order)
+        return 0
+
     def Send_Direct_Order(self, PWM_left=None, PWM_right=None, order=None,
                           data1=None, data2=None):
         if(order is None):
