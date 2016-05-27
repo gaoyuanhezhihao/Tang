@@ -9,10 +9,13 @@
 #define BEST_PWM 2200
 #define SYSTEM_CLOCK 16000000
 
+#define COUNTER_PORT 3
+#define STEPS_PER_CIRCLE 1000
 
 char state = 's';
 const char HEADER = 'H';
 char stoped = 1;
+unsigned int step_count = 0;
 
 void setup()
 {
@@ -22,6 +25,9 @@ void setup()
   pinMode(ENA_L, OUTPUT);
   pinMode(DIR_R, OUTPUT);
   pinMode(ENA_R, OUTPUT);
+
+  pinMode(COUNTER_PORT, INPUT_PULLUP);
+  attachInterrupt(0, port0_interrupt_handler, FALLING);
 
   TCCR3A = TCCR3B = 0;
   TCCR3A = _BV(COM3A1) | _BV(WGM31); //non-inverting
@@ -39,7 +45,10 @@ void setup()
   OCR4A = SYSTEM_CLOCK / BEST_PWM/2;
   pinMode(PWM_R, OUTPUT);
 }
-
+void port0_interrupt_handler()
+{
+  ++step_count;
+}
 void change_pwm(char *rcv_ch, unsigned int *p_pwm,char channel)
 {
   *p_pwm = rcv_ch[1] * 256;
@@ -146,5 +155,15 @@ void loop()
       process_msg(rcv_ch);
     }
   }
-
+  check_step_counter();
+}
+void check_step_counter(){
+  static unsigned int circle_count = 0;
+  if(step_count >= STEPS_PER_CIRCLE)
+  {
+    step_count = 0;
+    ++circle_count;
+    Serial1.print(circle_count);
+    Serial1.println("-th circle");
+  }
 }
