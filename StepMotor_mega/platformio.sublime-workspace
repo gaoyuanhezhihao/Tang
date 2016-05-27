@@ -1,0 +1,372 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"ENA_",
+				"ENA_L"
+			],
+			[
+				"DIR_R_",
+				"DIR_R_1"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "src/mega_step_motor.ino",
+			"settings":
+			{
+				"buffer_size": 2972,
+				"line_ending": "Windows"
+			}
+		}
+	],
+	"build_system": "PlatformIO",
+	"command_palette":
+	{
+		"height": 392.0,
+		"selected_items":
+		[
+			[
+				"",
+				"Build: Upload"
+			],
+			[
+				"Package Control: ",
+				"Package Control: Upgrade Package"
+			]
+		],
+		"width": 400.0
+	},
+	"console":
+	{
+		"height": 125.0
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/G/Study/Project/Smart Robot Car/Program/Code/Tang/StepMotor_mega/platformio.ini",
+		"/G/Study/Project/Smart Robot Car/Program/Code/ThreeWheel/V3/Three_Wheel/platformio/platformio.ini",
+		"/G/Study/Project/Smart Robot Car/Program/Code/ThreeWheel/V3/Three_Wheel/platformio/src/main.ino",
+		"/G/Study/Electronics/Arduino Workspace/low_freq/low_freq/low_freq.ino",
+		"/G/Study/Project/Smart Robot Car/Program/Code/Tang/StepMotor_mega/platformio/platformio.ini",
+		"/C/Users/Anna Sherlock/AppData/Roaming/Sublime Text 2/Packages/Stino/Default (Windows).sublime-keymap",
+		"/C/Users/Anna Sherlock/AppData/Roaming/Sublime Text 2/Packages/Package Control/Package Control.sublime-settings",
+		"/C/Users/Anna Sherlock/AppData/Roaming/Sublime Text 2/Packages/User/Package Control.sublime-settings",
+		"/G/Study/Electronics/Arduino Workspace/platformio.sublime-project",
+		"/G/Study/Project/Smart Robot Car/Material/电机驱动/AnyRobot二路电机驱动板资料/arduino两路电机程序/两路电机PID调速/pidSpeed-2Motor/pidSpeed-2Motor.ino",
+		"/C/Users/Anna Sherlock/Documents/Arduino/Hello/Hello.ino",
+		"/G/Study/Project/Smart Robot Car/Program/Code/AnyCBot/pidSpeed-2Motor/pidSpeed-2Motor.ino",
+		"/C/Users/Anna Sherlock/Documents/Arduino/Serial_int/Serial_int.ino",
+		"/G/Study/Electronics/Arduino Workspace/VisualMicro/Serial/Serial_send_int/Serial_send_int.ino",
+		"/G/Study/Project/Smart Robot Car/Program/Code/Tang/StepMotor/StepMotor/StepMotor/StepMotor.ino",
+		"/C/Users/Anna Sherlock/AppData/Roaming/Sublime Text 2/Packages/User/Stino/Preferences.stino-settings"
+	],
+	"find":
+	{
+		"height": 35.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"DIR_2",
+			"DIR_1",
+			"ENA_2",
+			"ENA_1",
+			"SetPinFrequency",
+			"Serial"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"DIR_R_1",
+			"DIR_L_1",
+			"DIR_R_2",
+			"DIR_L_2",
+			"Serial1"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": true,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "src/mega_step_motor.ino",
+					"settings":
+					{
+						"buffer_size": 2972,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1442,
+								1442
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/User/Stino/Arduino.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1090.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 0.0
+	},
+	"input":
+	{
+		"height": 31.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.Deviot|Pio_Install1459659677.05":
+	{
+		"height": 124.0
+	},
+	"output.Deviot|Pio_Install1459659834.36":
+	{
+		"height": 124.0
+	},
+	"output.Deviot|Pio_Install1459659901.76":
+	{
+		"height": 124.0
+	},
+	"output.Deviot|Pio_Install1459660044.76":
+	{
+		"height": 124.0
+	},
+	"output.Deviot|Pio_Install1459663303.8":
+	{
+		"height": 124.0
+	},
+	"output.Deviot|Pio_Install1459663380.98":
+	{
+		"height": 124.0
+	},
+	"output.Deviot|Pio_Install1459664188.79":
+	{
+		"height": 124.0
+	},
+	"output.Deviot|Pio_Install1459664219.67":
+	{
+		"height": 124.0
+	},
+	"output.Deviot|Pio_Install1459664231.12":
+	{
+		"height": 124.0
+	},
+	"output.build|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Hello|1451308918.68":
+	{
+		"height": 100.0
+	},
+	"output.build|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Serial_int|1452734668.72":
+	{
+		"height": 124.0
+	},
+	"output.build|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Serial_int|1452735167.16":
+	{
+		"height": 124.0
+	},
+	"output.build|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Serial_int|1452735196.84":
+	{
+		"height": 124.0
+	},
+	"output.build|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Serial_int|1452735469.83":
+	{
+		"height": 124.0
+	},
+	"output.build|G:\\Study\\Project\\Smart Robot Car\\Material\\电机驱动\\AnyRobot二路电机驱动板资料\\arduino两路电机程序\\两路电机PID调速\\pidSpeed-2Motor|1451307526.85":
+	{
+		"height": 100.0
+	},
+	"output.build|G:\\Study\\Project\\Smart Robot Car\\Material\\电机驱动\\AnyRobot二路电机驱动板资料\\arduino两路电机程序\\两路电机PID调速\\pidSpeed-2Motor|1451307677.87":
+	{
+		"height": 100.0
+	},
+	"output.build|G:\\Study\\Project\\Smart Robot Car\\Material\\电机驱动\\AnyRobot二路电机驱动板资料\\arduino两路电机程序\\两路电机PID调速\\pidSpeed-2Motor|1451308062.42":
+	{
+		"height": 100.0
+	},
+	"output.build|G:\\Study\\Project\\Smart Robot Car\\Material\\电机驱动\\AnyRobot二路电机驱动板资料\\arduino两路电机程序\\两路电机PID调速\\pidSpeed-2Motor|1451308749.6":
+	{
+		"height": 100.0
+	},
+	"output.build|G:\\Study\\Project\\Smart Robot Car\\Program\\Code\\AnyCBot\\pidSpeed-2Motor|1451395948.48":
+	{
+		"height": 124.0
+	},
+	"output.exec":
+	{
+		"height": 124.0
+	},
+	"output.upload|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Hello|1451308970.84":
+	{
+		"height": 100.0
+	},
+	"output.upload|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Serial_int|1452735217.72":
+	{
+		"height": 124.0
+	},
+	"output.upload|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Serial_int|1452735287.14":
+	{
+		"height": 124.0
+	},
+	"output.upload|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Serial_int|1452735490.19":
+	{
+		"height": 124.0
+	},
+	"output.upload|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Serial_int|1452736504.94":
+	{
+		"height": 124.0
+	},
+	"output.upload|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Serial_int|1452736520.35":
+	{
+		"height": 124.0
+	},
+	"output.upload|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Serial_int|1452736544.77":
+	{
+		"height": 124.0
+	},
+	"output.upload|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Serial_int|1452736563.41":
+	{
+		"height": 124.0
+	},
+	"output.upload|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Serial_int|1452736589.29":
+	{
+		"height": 124.0
+	},
+	"output.upload|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Serial_int|1452736971.56":
+	{
+		"height": 124.0
+	},
+	"output.upload|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Serial_int|1452737517.87":
+	{
+		"height": 124.0
+	},
+	"output.upload|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Serial_int|1452737564.24":
+	{
+		"height": 124.0
+	},
+	"output.upload|G:\\Study\\Electronics\\Arduino Workspace\\Serial\\print_test|1453101211.23":
+	{
+		"height": 124.0
+	},
+	"output.upload|G:\\Study\\Electronics\\Arduino Workspace\\Serial\\print_test|1453101255.07":
+	{
+		"height": 124.0
+	},
+	"output.upload|G:\\Study\\Electronics\\Arduino Workspace\\Serial\\print_test|1453101309.0":
+	{
+		"height": 124.0
+	},
+	"output.upload|G:\\Study\\Electronics\\Arduino Workspace\\Serial\\print_test|1453101395.46":
+	{
+		"height": 124.0
+	},
+	"output.upload|G:\\Study\\Electronics\\Arduino Workspace\\Serial\\print_test|1453101430.59":
+	{
+		"height": 124.0
+	},
+	"output.upload|G:\\Study\\Project\\Smart Robot Car\\Material\\电机驱动\\AnyRobot二路电机驱动板资料\\arduino两路电机程序\\两路电机PID调速\\pidSpeed-2Motor|1451307555.04":
+	{
+		"height": 100.0
+	},
+	"output.upload|G:\\Study\\Project\\Smart Robot Car\\Material\\电机驱动\\AnyRobot二路电机驱动板资料\\arduino两路电机程序\\两路电机PID调速\\pidSpeed-2Motor|1451307651.23":
+	{
+		"height": 100.0
+	},
+	"output.upload|G:\\Study\\Project\\Smart Robot Car\\Material\\电机驱动\\AnyRobot二路电机驱动板资料\\arduino两路电机程序\\两路电机PID调速\\pidSpeed-2Motor|1451307694.9":
+	{
+		"height": 100.0
+	},
+	"replace":
+	{
+		"height": 64.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 173.0,
+	"status_bar_visible": true
+}
