@@ -39,7 +39,7 @@
 			"file": "src/mega_step_motor.ino",
 			"settings":
 			{
-				"buffer_size": 9184,
+				"buffer_size": 10122,
 				"line_ending": "Windows"
 			}
 		}
@@ -165,15 +165,15 @@
 					"file": "src/mega_step_motor.ino",
 					"settings":
 					{
-						"buffer_size": 9184,
+						"buffer_size": 10122,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								7169,
-								7169
+								8569,
+								8569
 							]
 						],
 						"settings":
@@ -183,7 +183,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 5991.0,
+						"translation.y": 6590.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"

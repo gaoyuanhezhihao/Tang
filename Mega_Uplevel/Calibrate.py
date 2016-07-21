@@ -134,6 +134,11 @@ class CarAdmin():
         dist = int(self.dist_in_std_len_entry.get())
         self.Send_Direct_Order(order = 'D', data1=dist/256,
                               data2 = dist%256)
+    def go_backward(self):
+        dist = int(self.dist_in_std_len_entry.get())
+        self.Send_Direct_Order(order = 'B', data1=dist/256,
+                              data2 = dist%256)
+
 
     def Send_Direct_Order(self, PWM_left=None, PWM_right=None, order=None,
                           data1=None, data2=None):
@@ -253,7 +258,10 @@ class CarAdmin():
         self.dist_in_std_len_entry = Tkinter.Entry(self.calibra_panel, textvariable=self.dist_in_std_len) 
         self.dist_in_std_len_entry.pack()
 
-        self.go_dist_btn = Tkinter.Button(self.calibra_panel, text="go dist", command=self.go_dist)
+        self.go_dist_btn = Tkinter.Button(self.calibra_panel, text="go forward ", command=self.go_dist)
+        self.go_dist_btn.pack()
+
+        self.go_dist_btn = Tkinter.Button(self.calibra_panel, text="go backward", command=self.go_backward)
         self.go_dist_btn.pack()
 
         while True:

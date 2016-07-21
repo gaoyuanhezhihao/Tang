@@ -116,7 +116,8 @@ void port0_interrupt_handler()
       ++step_count;
       if(count_std_length >= dist_in_std_lenght) {
           stop_car();
-          current_system_mode = NORMAL_MODE;
+//          current_system_mode = NORMAL_MODE;
+          current_dist_go_states = WAIT_D_ORDER;
           Serial1.println("D_ok");
       }
       if(step_count >= std_length) {
@@ -172,7 +173,7 @@ void go_forward() {
 void stop_car() {
     last_state = state;
     state = 's';
-    if(last_state == 'l' || last_state == 'r' || last_state == 'f') {
+    if(last_state == 'l' || last_state == 'r' || last_state == 'f' || last_state == 'b') {
       brake(100);
     }
     digitalWrite(ENA_R, 0);
@@ -326,23 +327,7 @@ int process_dist_go(char rcv_ch[3]) {
       }
       break;
     case WAIT_D_ORDER:
-      if('D' == rcv_ch[0]) {
-          if(0 != _2bytes) {
-            dist_in_std_lenght = _2bytes;
-            Serial1.println("D_ack");
-            step_count = 0;
-            count_std_length = 0;
-            current_dist_go_states = DIST_MOVING;
-            go_forward();
-          } else {
-            exit_dist_go("zero data");
-            return FALSE;
-          }
-      } else {
-        exit_dist_go("wrong order, WAIT_D_ORDER");
-        Serial1.println(rcv_ch[0]);
-        return FALSE;
-      }
+      return process_dist_go_waiting(rcv_ch, _2bytes);
       break;
     case DIST_MOVING:
       if('w' == rcv_ch[0]) {
@@ -367,6 +352,51 @@ int process_dist_go(char rcv_ch[3]) {
       break;
   }
   return TRUE;
+}
+
+int process_dist_go_waiting(char rcv_ch[3], unsigned int _2bytes) {
+      if('D' == rcv_ch[0]) {
+          if(0 != _2bytes) {
+            dist_in_std_lenght = _2bytes;
+            Serial1.println("D_ack");
+            step_count = 0;
+            count_std_length = 0;
+            current_dist_go_states = DIST_MOVING;
+            go_forward();
+          } else {
+            exit_dist_go("zero data");
+            return FALSE;
+          }
+      } else if('B' == rcv_ch[0]) {
+          // go backwards.
+          if(0 != _2bytes) {
+            dist_in_std_lenght = _2bytes;
+            Serial1.println("B_ack");
+            step_count = 0;
+            count_std_length = 0;
+            current_dist_go_states = DIST_MOVING;
+            go_backward();
+          } else {
+            exit_dist_go("zero data");
+            return FALSE;
+          }
+      } else if('d' == rcv_ch[0]) {
+          if(0 != _2bytes) {
+            std_length = _2bytes;
+            Serial1.println("d_ack");
+            current_dist_go_states = WAIT_D_ORDER;
+            stop_car();
+          }else {
+            exit_dist_go("zero data");
+            return FALSE;
+          }
+      } 
+      else {
+        exit_dist_go("wrong order, WAIT_D_ORDER");
+        Serial1.println(rcv_ch[0]);
+        return FALSE;
+      }
+      return TRUE;
 }
 
 void exit_dist_go(char * err_msg) {
