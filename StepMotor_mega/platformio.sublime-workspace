@@ -4,6 +4,26 @@
 		"selected_items":
 		[
 			[
+				"process_",
+				"process_normal"
+			],
+			[
+				"DIST_",
+				"DIST_GO_MODE"
+			],
+			[
+				"digi",
+				"digitalRead"
+			],
+			[
+				"change_",
+				"change_wheel_direction"
+			],
+			[
+				"circl",
+				"circle_count"
+			],
+			[
 				"ENA_",
 				"ENA_L"
 			],
@@ -19,7 +39,7 @@
 			"file": "src/mega_step_motor.ino",
 			"settings":
 			{
-				"buffer_size": 2972,
+				"buffer_size": 9184,
 				"line_ending": "Windows"
 			}
 		}
@@ -56,6 +76,7 @@
 	},
 	"file_history":
 	[
+		"/G/Study/Project/Smart Robot Car/Program/Code/Tang/StepMotor_mega/.pioenvs/.sconsign.dblite",
 		"/G/Study/Project/Smart Robot Car/Program/Code/Tang/StepMotor_mega/platformio.ini",
 		"/G/Study/Project/Smart Robot Car/Program/Code/ThreeWheel/V3/Three_Wheel/platformio/platformio.ini",
 		"/G/Study/Project/Smart Robot Car/Program/Code/ThreeWheel/V3/Three_Wheel/platformio/src/main.ino",
@@ -89,6 +110,22 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"Serial.",
+			"exit",
+			"\"exit",
+			"ok",
+			"start_step_turn",
+			"start_",
+			"exit_dist_go",
+			"exit-dist_go",
+			"error_handler_dist_go",
+			"bool",
+			"start_car",
+			"steps_needed",
+			"start_step_turn",
+			"true",
+			"step_turn_mode",
+			"step_mode",
 			"DIR_2",
 			"DIR_1",
 			"ENA_2",
@@ -102,6 +139,9 @@
 		"regex": false,
 		"replace_history":
 		[
+			"exit_dist_go",
+			"exit-dist_go",
+			"step_turn_mode",
 			"DIR_R_1",
 			"DIR_L_1",
 			"DIR_R_2",
@@ -111,7 +151,7 @@
 		"reverse": false,
 		"show_context": true,
 		"use_buffer2": true,
-		"whole_word": true,
+		"whole_word": false,
 		"wrap": true
 	},
 	"groups":
@@ -125,15 +165,15 @@
 					"file": "src/mega_step_motor.ino",
 					"settings":
 					{
-						"buffer_size": 2972,
+						"buffer_size": 9184,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1442,
-								1442
+								7169,
+								7169
 							]
 						],
 						"settings":
@@ -143,7 +183,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1090.0,
+						"translation.y": 5991.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -260,7 +300,7 @@
 	},
 	"output.exec":
 	{
-		"height": 124.0
+		"height": 233.0
 	},
 	"output.upload|C:\\Users\\Anna Sherlock\\Documents\\Arduino\\Hello|1451308970.84":
 	{
@@ -352,6 +392,10 @@
 		"height": 0.0,
 		"selected_items":
 		[
+			[
+				"",
+				".pioenvs/.sconsign.dblite"
+			]
 		],
 		"width": 0.0
 	},

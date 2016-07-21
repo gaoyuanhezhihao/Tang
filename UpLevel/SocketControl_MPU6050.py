@@ -112,6 +112,8 @@ class CarSocketAdmin(CarAdmin):
                 except Exception, e:
                     logger.error("*** connection failed."+str(e)+"\n Delete the couple ***")
                     # print "*** connection failed.", e, "\n Delete the couple ***"
+                    self.GlobalMem = 's'
+                    self.GlobalFlag = 1
                     self.sock_client.shutdown(socket.SHUT_RDWR)
                     self.sock_client.close()
                     break

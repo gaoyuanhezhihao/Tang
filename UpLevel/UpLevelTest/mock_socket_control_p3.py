@@ -1,5 +1,4 @@
 # Server.py
-from __future__ import print_function
 import socket
 import sys
 import time
@@ -37,24 +36,24 @@ while True:
         try:
             message = sc.recv(1024)
             print("recv", repr(message), "\n")
-            if "f\n" == message or "b\n" == message:
-                sc.sendall(ack)
+            if "f\n" == message.decode() or "b\n" == message.decode():
+                sc.sendall(ack.encode())
                 print("replyed: ", ack)
-            elif "l" in message:
-                sc.sendall(ack)
+            elif "l" in message.decode():
+                sc.sendall(ack.encode())
                 print("replyed: ", ack)
                 time.sleep(2)
-                sc.sendall(l_ack)
+                sc.sendall(l_ack.encode())
                 print("replyed: ", l_ack)
-            elif "r" in message:
-                sc.sendall(ack)
+            elif "r" in message.decode():
+                sc.sendall(ack.encode())
                 print("replyed: ", ack)
                 time.sleep(2)
-                sc.sendall(r_ack)
+                sc.sendall(r_ack.encode())
                 print("replyed: ", r_ack)
             else:
                 print("wrong format")
-                sc.sendall(ack)
+                sc.sendall(ack.encode())
                 print("replyed: ", ack)
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
