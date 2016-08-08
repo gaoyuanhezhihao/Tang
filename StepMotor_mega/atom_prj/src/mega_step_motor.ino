@@ -75,25 +75,30 @@ void start_step_turn(char *rcv_ch){
   switch(rcv_ch[0]) {
     case 'y':// turing left some steps.
       step_turn_mode = 'y';
-      change_wheel_direction('s');
+      // change_wheel_direction('s');
+      stop_car();
       step_count = 0;
       steps_needed = rcv_ch[1] * 256;
       steps_needed += (unsigned char)rcv_ch[2];
       Serial1.println("y_ack");
-      Serial1.print("try to step left ");
+      Serial1.println("try to step left ");
       Serial1.println(steps_needed);
-      change_wheel_direction('l');
+      // change_wheel_direction('l');
+      turn_left();
       break;
+
     case 'z':// step right.
       step_turn_mode = 'z';
-      change_wheel_direction('s');
+      // change_wheel_direction('s');
+      stop_car();
       step_count = 0;
       steps_needed = rcv_ch[1] * 256;
       steps_needed += (unsigned char)rcv_ch[2];
       Serial1.println("z_ack");
-      Serial1.print("try to step right ");
+      Serial1.println("try to step right ");
       Serial1.println(steps_needed);
-      change_wheel_direction('r');
+      // change_wheel_direction('r');
+      turn_right();
       break;
     default:
       break;
@@ -112,11 +117,12 @@ void port0_interrupt_handler()
           Serial1.println("_ok");
           current_system_mode = NORMAL_MODE;
       }
-  }else if(current_system_mode == DIST_GO_MODE) {
+  }else if(current_system_mode == DIST_GO_MODE && current_dist_go_states == DIST_MOVING) {
       ++step_count;
       if(count_std_length >= dist_in_std_lenght) {
           stop_car();
-          current_system_mode = NORMAL_MODE;
+//          current_system_mode = NORMAL_MODE;
+          current_dist_go_states = WAIT_D_ORDER;
           Serial1.println("D_ok");
       }
       if(step_count >= std_length) {
@@ -129,8 +135,6 @@ void change_pwm(char *rcv_ch, unsigned int *p_pwm,char channel)
 {
   *p_pwm = rcv_ch[1] * 256;
   *p_pwm += (unsigned char)rcv_ch[2];
-  Serial1.print("rcv:pwm=");
-  Serial1.print(*p_pwm);
   if (channel == 'l')
   {
     ICR3  = SYSTEM_CLOCK / *p_pwm;
@@ -141,9 +145,6 @@ void change_pwm(char *rcv_ch, unsigned int *p_pwm,char channel)
     ICR4 = SYSTEM_CLOCK / *p_pwm;
     OCR4A = SYSTEM_CLOCK / *p_pwm /2;
   }
-  Serial1.println("p_ack");
-  Serial1.print(channel);
-  Serial1.println(" pwm changed\n");
 }
 void change_state(char order)
 {
@@ -172,12 +173,12 @@ void go_forward() {
 void stop_car() {
     last_state = state;
     state = 's';
-    if(last_state == 'l' || last_state == 'r' || last_state == 'f') {
+    if(last_state == 'l' || last_state == 'r' || last_state == 'f' || last_state == 'b') {
       brake(100);
     }
     digitalWrite(ENA_R, 0);
     digitalWrite(ENA_L, 0);
-    Serial1.println("try to stop\n");
+    Serial1.println("try to stop");
     stoped = 1;
 }
 
@@ -270,6 +271,9 @@ int process_normal(char rcv_ch[3]) {
   case 'p':
     change_pwm(rcv_ch, &pwm,  'l');
     change_pwm(rcv_ch, &pwm, 'r');
+    Serial1.print("rcv:pwm=");
+    Serial1.println(pwm);
+    Serial1.println("p_ack");
     break;
   case 'y':// step left.
   case 'z':// step right.
@@ -326,23 +330,7 @@ int process_dist_go(char rcv_ch[3]) {
       }
       break;
     case WAIT_D_ORDER:
-      if('D' == rcv_ch[0]) {
-          if(0 != _2bytes) {
-            dist_in_std_lenght = _2bytes;
-            Serial1.println("D_ack");
-            step_count = 0;
-            count_std_length = 0;
-            current_dist_go_states = DIST_MOVING;
-            go_forward();
-          } else {
-            exit_dist_go("zero data");
-            return FALSE;
-          }
-      } else {
-        exit_dist_go("wrong order, WAIT_D_ORDER");
-        Serial1.println(rcv_ch[0]);
-        return FALSE;
-      }
+      return process_dist_go_waiting(rcv_ch, _2bytes);
       break;
     case DIST_MOVING:
       if('w' == rcv_ch[0]) {
@@ -369,13 +357,58 @@ int process_dist_go(char rcv_ch[3]) {
   return TRUE;
 }
 
+int process_dist_go_waiting(char rcv_ch[3], unsigned int _2bytes) {
+      if('D' == rcv_ch[0]) {
+          if(0 != _2bytes) {
+            dist_in_std_lenght = _2bytes;
+            Serial1.println("D_ack");
+            step_count = 0;
+            count_std_length = 0;
+            current_dist_go_states = DIST_MOVING;
+            go_forward();
+          } else {
+            exit_dist_go("zero data");
+            return FALSE;
+          }
+      } else if('B' == rcv_ch[0]) {
+          // go backwards.
+          if(0 != _2bytes) {
+            dist_in_std_lenght = _2bytes;
+            Serial1.println("B_ack");
+            step_count = 0;
+            count_std_length = 0;
+            current_dist_go_states = DIST_MOVING;
+            go_backward();
+          } else {
+            exit_dist_go("zero data");
+            return FALSE;
+          }
+      } else if('d' == rcv_ch[0]) {
+          if(0 != _2bytes) {
+            std_length = _2bytes;
+            Serial1.println("d_ack");
+            current_dist_go_states = WAIT_D_ORDER;
+            stop_car();
+          }else {
+            exit_dist_go("zero data");
+            return FALSE;
+          }
+      }
+      else {
+        exit_dist_go("wrong order, WAIT_D_ORDER");
+        Serial1.println(rcv_ch[0]);
+        return FALSE;
+      }
+      return TRUE;
+}
+
 void exit_dist_go(char * err_msg) {
     stop_car();
     current_system_mode = NORMAL_MODE;
     current_dist_go_states = NOT_DIST_GO;
-    Serial1.print("exit_dist_go");
+    Serial1.println("exit_dist_go");
     Serial1.println(current_dist_go_states);
-    Serial1.print("-->");
+    Serial1.println("-->");
     Serial1.println(err_msg);
 }
 
@@ -396,15 +429,15 @@ void loop()
       process_msg(rcv_ch);
     }
   }
-  check_step_counter();
+  // check_step_counter();
 }
-void check_step_counter(){
-
-  if(step_turn_mode != 'N') {
-    // we are in step turning mode.
-    if(step_count >= steps_needed) {
-      change_wheel_direction('s');
-      step_turn_mode = 'N';
-    }
-  }
-}
+// void check_step_counter(){
+//
+//   if(step_turn_mode != 'N') {
+//     // we are in step turning mode.
+//     if(step_count >= steps_needed) {
+//       change_wheel_direction('s');
+//       step_turn_mode = 'N';
+//     }
+//   }
+// }
