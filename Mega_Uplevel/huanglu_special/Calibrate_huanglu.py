@@ -1,4 +1,4 @@
-# Calibrate.py
+# Calibrate_win7.py
 '''
 This software is for Tang's car.
 '''
@@ -9,6 +9,8 @@ import time
 import pickle
 import pdb
 import logging
+
+SYS_LOGGER_NAME = "adaptor"
 
 class CarAdmin():
 
@@ -27,7 +29,7 @@ class CarAdmin():
             fh.setFormatter(formatter)
             ch.setFormatter(formatter)
         else:
-            self.logger = logging.getLogger('SocketControl_MPU6050.Calibrate')
+            self.logger = logging.getLogger(SYS_LOGGER_NAME)
             self.name = name
             self.State = 's'
             self.RcvBuffer = []
@@ -150,7 +152,7 @@ class CarAdmin():
         msg += struct.pack('!B', data1)
         msg += struct.pack('!B',data2)
         self.port.write(msg)
-        print order
+        # print order
         #self.port.write('H')
         #self.port.write(order)
         #self.port.write(data1)
@@ -162,7 +164,7 @@ class CarAdmin():
         self.send_msg_time = time.time()
         return 0
     def serial_ports(self):
-        ports = ['/dev/ttyUSB' + str(i) for i in range(256)]
+        ports = ['com' + str(i) for i in range(256)]
         result = []
         for port in ports:
             try:

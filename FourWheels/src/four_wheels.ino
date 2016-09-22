@@ -15,8 +15,6 @@
 #define TRUE 1
 #define FALSE 0
 
-const unsigned int STEPS = 15;
-const unsigned int TIME_PER_STEP = 1000 / STEPS;
 enum dist_go_states {
   NOT_DIST_GO,
   WAIT_D_ORDER,
@@ -77,30 +75,25 @@ void start_step_turn(char *rcv_ch){
   switch(rcv_ch[0]) {
     case 'y':// turing left some steps.
       step_turn_mode = 'y';
-      // change_wheel_direction('s');
-      stop_car();
+      change_wheel_direction('s');
       step_count = 0;
       steps_needed = rcv_ch[1] * 256;
       steps_needed += (unsigned char)rcv_ch[2];
       Serial1.println("y_ack");
-      Serial1.println("try to step left ");
+      Serial1.print("try to step left ");
       Serial1.println(steps_needed);
-      // change_wheel_direction('l');
-      turn_left();
+      change_wheel_direction('l');
       break;
-
     case 'z':// step right.
       step_turn_mode = 'z';
-      // change_wheel_direction('s');
-      stop_car();
+      change_wheel_direction('s');
       step_count = 0;
       steps_needed = rcv_ch[1] * 256;
       steps_needed += (unsigned char)rcv_ch[2];
       Serial1.println("z_ack");
-      Serial1.println("try to step right ");
+      Serial1.print("try to step right ");
       Serial1.println(steps_needed);
-      // change_wheel_direction('r');
-      turn_right();
+      change_wheel_direction('r');
       break;
     default:
       break;
@@ -119,7 +112,7 @@ void port0_interrupt_handler()
           Serial1.println("_ok");
           current_system_mode = NORMAL_MODE;
       }
-  }else if(current_system_mode == DIST_GO_MODE && current_dist_go_states == DIST_MOVING) {
+  }else if(current_system_mode == DIST_GO_MODE) {
       ++step_count;
       if(count_std_length >= dist_in_std_lenght) {
           stop_car();
@@ -133,28 +126,45 @@ void port0_interrupt_handler()
       }
   }
 }
+void micro_move(char *rcv_ch) {
+  unsigned int time_to_move = rcv_ch[1] * 256;
+  time_to_move += (unsigned char)rcv_ch[2];
+  switch(rcv_ch[0]) {
+    case 'H':
+      turn_left();
+      delay(time_to_move);
+      stop_car();
+      Serial1.println("H_ok");
+      break;
+    case 'L':
+      turn_right();
+      delay(time_to_move);
+      stop_car();
+      Serial1.println("L_ok");
+      break;
+    case 'J':
+      go_backward();
+      delay(time_to_move);
+      stop_car();
+      Serial1.println("J_ok");
+      break;
+    case 'K':
+      go_forward();
+      delay(time_to_move);
+      stop_car();
+      Serial1.println("K_ok");
+      break;
+    default:
+      break;
+  }
+}
 void change_pwm(char *rcv_ch, unsigned int *p_pwm,char channel)
 {
-  static unsigned int order_pwm = BEST_PWM;
-  if(rcv_ch != NULL) {
-    /*pwm needs to be readed from msg.*/
-    *p_pwm = rcv_ch[1] * 256;
-    *p_pwm += (unsigned char)rcv_ch[2];
-    order_pwm = *p_pwm;
-  }else{
-    /*change pwm to parts of current_pwm. */
-    *p_pwm = order_pwm * (*p_pwm) / STEPS;
-  }
+  *p_pwm = rcv_ch[1] * 256;
+  *p_pwm += (unsigned char)rcv_ch[2];
+  Serial1.print("rcv:pwm=");
   Serial1.print(*p_pwm);
-  Serial1.println("...");
-  if(channel == 'a') {
-    /*change all channels*/
-    ICR3  = SYSTEM_CLOCK / *p_pwm;
-    ICR4 = ICR3;
-    OCR3A = SYSTEM_CLOCK / *p_pwm /2;
-    OCR4A = OCR3A;
-  }
-  else if (channel == 'l')
+  if (channel == 'l')
   {
     ICR3  = SYSTEM_CLOCK / *p_pwm;
     OCR3A = SYSTEM_CLOCK / *p_pwm /2;
@@ -164,8 +174,10 @@ void change_pwm(char *rcv_ch, unsigned int *p_pwm,char channel)
     ICR4 = SYSTEM_CLOCK / *p_pwm;
     OCR4A = SYSTEM_CLOCK / *p_pwm /2;
   }
+  Serial1.println("p_ack");
+  Serial1.print(channel);
+  Serial1.println(" pwm changed\n");
 }
-
 void change_state(char order)
 {
   change_wheel_direction(order);
@@ -183,37 +195,11 @@ void start_car(){
 void go_forward() {
     state = 'f';
     Serial1.println("try to go forward");
-    // digitalWrite(DIR_L, 0);
-    // digitalWrite(DIR_R, 1);
-    // digitalWrite(ENA_L, 1);
-    // digitalWrite(ENA_R, 1);
-    step_go('f');
-}
-
-void step_go(char dir) {
-  unsigned int step_count = 1;
-  unsigned int step_count_copy = step_count;
-  char * null_ptr = NULL;
-  change_pwm(null_ptr, &step_count_copy, 'a');
-  start_car();
-  if('f' == dir) {
-    digitalWrite(DIR_L, 0);
-    digitalWrite(DIR_R, 1);
-    digitalWrite(ENA_L, 1);
-    digitalWrite(ENA_R, 1);
-  }else if('b' == dir){
     digitalWrite(DIR_L, 1);
     digitalWrite(DIR_R, 0);
     digitalWrite(ENA_L, 1);
     digitalWrite(ENA_R, 1);
-  }
-  while(++step_count <= STEPS) {
-    step_count_copy = step_count;
-    Serial1.print(step_count_copy);
-    Serial1.println("-th step");
-    delay(TIME_PER_STEP);
-    change_pwm(null_ptr, &step_count_copy, 'a');
-  }
+    start_car();
 }
 
 void stop_car() {
@@ -224,7 +210,7 @@ void stop_car() {
     }
     digitalWrite(ENA_R, 0);
     digitalWrite(ENA_L, 0);
-    Serial1.println("try to stop");
+    Serial1.println("try to stop\n");
     stoped = 1;
 }
 
@@ -251,12 +237,11 @@ void turn_right() {
 void go_backward() {
     state = 'b';
     Serial1.println("try to run back");
-    // digitalWrite(DIR_L, 1);
-    // digitalWrite(DIR_R, 0);
-    // digitalWrite(ENA_L, 1);
-    // digitalWrite(ENA_R, 1);
-    // start_car();
-    step_go('b');
+    digitalWrite(DIR_L, 0);
+    digitalWrite(DIR_R, 1);
+    digitalWrite(ENA_L, 1);
+    digitalWrite(ENA_R, 1);
+    start_car();
 }
 void change_wheel_direction(char order)
 {
@@ -267,8 +252,8 @@ void change_wheel_direction(char order)
     Serial1.println("s_ack");
     break;
   case 'f':
-    Serial1.println("f_ack");
     go_forward();
+    Serial1.println("f_ack");
     break;
   case 'l':
     turn_left();
@@ -318,9 +303,6 @@ int process_normal(char rcv_ch[3]) {
   case 'p':
     change_pwm(rcv_ch, &pwm,  'l');
     change_pwm(rcv_ch, &pwm, 'r');
-    Serial1.print("rcv:pwm=");
-    Serial1.println(pwm);
-    Serial1.println("p_ack");
     break;
   case 'y':// step left.
   case 'z':// step right.
@@ -333,6 +315,12 @@ int process_normal(char rcv_ch[3]) {
     stop_car();
     current_system_mode = DIST_GO_MODE;
     return FALSE;
+    break;
+  case 'H':
+  case 'J':
+  case 'K':
+  case 'L':
+    micro_move(rcv_ch);
     break;
   default:
     change_state(rcv_ch[0]);
@@ -453,9 +441,9 @@ void exit_dist_go(char * err_msg) {
     stop_car();
     current_system_mode = NORMAL_MODE;
     current_dist_go_states = NOT_DIST_GO;
-    Serial1.println("exit_dist_go");
+    Serial1.print("exit_dist_go");
     Serial1.println(current_dist_go_states);
-    Serial1.println("-->");
+    Serial1.print("-->");
     Serial1.println(err_msg);
 }
 
@@ -476,15 +464,15 @@ void loop()
       process_msg(rcv_ch);
     }
   }
-  // check_step_counter();
+  check_step_counter();
 }
-// void check_step_counter(){
-//
-//   if(step_turn_mode != 'N') {
-//     // we are in step turning mode.
-//     if(step_count >= steps_needed) {
-//       change_wheel_direction('s');
-//       step_turn_mode = 'N';
-//     }
-//   }
-// }
+void check_step_counter(){
+
+  if(step_turn_mode != 'N') {
+    // we are in step turning mode.
+    if(step_count >= steps_needed) {
+      change_wheel_direction('s');
+      step_turn_mode = 'N';
+    }
+  }
+}
