@@ -14,11 +14,11 @@ if 'Linux' in platform():
 elif 'Windows' in platform():
     PORT_PREFIX = 'com'
 const.retry_limit = 2  # if failed after 2 retries, Raise error.
-const.wait_time_limit = 0.5  # wait no more than 500ms when receiving reply.
+const.wait_time_limit = 1.0  # wait no more than 1000 ms before receiving reply.
 const.pulses_per_degree = 1720/90
 const.pulses_per_cm = 65.57
 const.split_flag = '\r\n'
-const.wait_turn_limit = 3
+const.wait_turn_limit = 1
 
 
 class CarProxy():
@@ -34,6 +34,7 @@ class CarProxy():
         self.tmp_msg = ''
         self.state = 's'
         self.start_turn_time = time.time()
+        self.msg_list = []
 
     def set_map_std_dist(self, std_dist):
         self.map_std_dist = std_dist
@@ -187,23 +188,34 @@ class CarProxy():
     def check_turn_ack(self):
         if self.state in ['l', 'r']:
             '''car is in turning state.'''
-            ok_reply = self.waiting_turn_ok + '_ok'
-            msg = self.rcv_uart_msg()
-            if msg is not None:
-                for token in msg:
-                    if ok_reply in token:
-                        # got right reply.
-                        # self.waiting_turn_ok = ''
-                        self.state = 's'
-                        self.logger.info("get reply:" + token)
-                        return True
+            ok_reply = '%s_ok' % self.state
+            for idx, pack in enumerate(self.msg_list):
+                if ok_reply in pack:
+                    # got right reply.
+                    self.state = 's'
+                    del self.msg_list[0: idx+1]
+                    self.logger.info("get reply:" + repr(pack))
+                    return True
             # check if waits too long?
             if time.time() - self.start_turn_time > const.wait_turn_limit:
                 self.peek_state()
 
     def peek_state(self):
-        self.Send_Direct_Order(order='Q')
-        self.state = self.get_car_stae()
+        count_send = 0
+        while count_send <= const.retry_limit:
+            self.Send_Direct_Order(order='Q')
+            count_send += 1
+            time_send_order = time.time()
+            while time.time() - time_send_order < const.wait_time_limit:
+                self.rcv_uart_msg()
+                for idx, pack in enumerate(self.msg_list):
+                    if "Q_ack" == pack[0:5]:
+                        self.state = pack[5]
+                        del self.msg_list[0: idx+1]
+                        self.logger.info("updated state to %s" %
+                                         repr(self.state))
+                        return True
+        raise Exception("Car Error", "RETRY TOO TIMES")
 
     def get_car_stae(self):
         retry_count = 0
@@ -211,12 +223,14 @@ class CarProxy():
         while retry_count <= const.retry_limit:
             retry_count += 1
             flag, msg = self.rcv_ack(len(good_reply))
+            self.logger.info("rcv msg:%s", repr(msg))
             if flag and "Q_ack" in msg:
                 return msg[5]
         # connection failed.
         raise Exception("Car Error", "RETRY TOO TIMES")
 
     def routines(self):
+        self.rcv_uart_msg()
         self.check_turn_ack()
 
     def rcv_map_dist(self, wait_time_limit=const.wait_time_limit):
@@ -244,8 +258,9 @@ class CarProxy():
         if byte_2_read >= 1:
             rcv = self.port.read(byte_2_read)
             self.tmp_msg += rcv
-            self.msg_list = self.tmp_msg.split(const.split_flag)
-            if len(self.msg_list) > 1:
-                self.tmp_msg = self.msg_list[-1]
-                return self.msg_list[0:-1]
-        return None
+            new_msg_list = self.tmp_msg.split(const.split_flag)
+            if len(new_msg_list) > 1:
+                self.tmp_msg = new_msg_list[-1]
+                self.msg_list += new_msg_list[0:-1]
+                return True
+        return False

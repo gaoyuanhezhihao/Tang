@@ -16,19 +16,19 @@ class MapControl():
 
     def __init__(self):
         self.init_logger()
-        # init view module.
-        self.view = MapView(self.logger, self)
         # init car.
         self.car = CarProxy(self.logger)
         # set standard length of the map .
         self.car.set_map_std_dist(MAP_STD_DIST)
+        # init view module.
+        self.view = MapView(self.logger, self)
         # add data base.
         self.data_base = data.MapDataBase(self.logger)
 
         self.waiting_data = False
 
     def go_forward(self):
-        if self.car.last_order in ['S', 'l', 'r']:
+        if self.car.state in ['s', 'l', 'r']:
             self.data_base.record_order('F')
             self.car.map_forward()
         else:
@@ -53,22 +53,17 @@ class MapControl():
         last_dist = self.car.map_stop()
         self.data_base.record_order('S', last_dist)
 
-    def new_route(self):
+    def new_route(self, start_name, end_name):
         self.car.Stop()
-        self.data_base.init_new_route(start="a", dst='b')
+        self.data_base.init_new_route(start=start_name, dst=end_name)
 
     def init_logger(self):
         _LOG_FORMAT = '%(asctime)s (%(filename)s/%(funcName)s)' \
             ' %(name)s %(levelname)s - %(message)s'
         self.logger = logging.getLogger('map_generator')
         _handler = logging.handlers.RotatingFileHandler(
-            "./log/" +
-            os.path.basename(__file__)[
-                :-
-                3] +
-            ".log",
-            maxBytes=102400,
-            backupCount=20)
+            "./log/" + os.path.basename(__file__)[: -3] + ".log",
+            maxBytes=102400, backupCount=20)
         _formatter = logging.Formatter(_LOG_FORMAT)
         _handler.setFormatter(_formatter)
         self.logger.addHandler(_handler)

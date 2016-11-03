@@ -1,7 +1,11 @@
 # data.py
 
 import logging
+import json
+import os
+from const_var import const
 
+const.map_folder_name = "map_data/"
 
 class MapDataBase(object):
 
@@ -16,8 +20,17 @@ class MapDataBase(object):
         self.map_list = []
         self.last_order = 's'
         self.all_map = {}
+        # create map data folder.
+        if not os.path.exists(const.map_folder_name):
+            os.makedirs(const.map_folder_name)
 
     def save_path(self):
+        path_name = const.map_folder_name + self.start + \
+                '-->' + self.dst + '.json'
+        print("path_name:%s" % path_name)
+        with open(path_name, 'w') as f:
+            json.dump(self.map_list, f)
+            f.close()
         print(self.map_list)
 
     def init_new_route(self, start, dst):
