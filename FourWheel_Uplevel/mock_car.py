@@ -8,11 +8,13 @@ from platform import platform
 from logging import handlers
 import serial
 from const_var import const
+import threading
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 HOST = '127.0.0.1'
 PORT = 8888
 const.split_flag = b'\r\n'
+const.turn_over_time = 4
 const.log_name = "mock_car"
 f_ack = b"f_ack"
 s_ack = b"s_ack"
@@ -25,6 +27,7 @@ p_ack = b"p_ack"
 D_ack = b"D_ack"
 D_ok = b"D_ok"
 B_ack = b"B_ack"
+B_ok = b"B_ok"
 F_ack = b"F_ack"
 y_ack = b"y_ack"
 y_ok = b"y_ok"
@@ -32,6 +35,7 @@ z_ack = b"z_ack"
 z_ok = b"z_ok"
 S_ack = b"Sab"
 Q_ack = b"Q_ack"
+K_ack = b"K_ack"
 
 
 if 'Linux' in platform():
@@ -90,6 +94,11 @@ class MockCar(object):
         self.port.write(message+const.split_flag)
         self.logger.info("port sent:%s" % message)
 
+    def call_back(self):
+        if self.state is not 's':
+            self.send(self.call_back_data)
+            self.state = 's'
+
     def process_msg(self, message):
             print("recv", repr(message), "\n")
             msg_order = message[1]
@@ -105,25 +114,40 @@ class MockCar(object):
             elif "l" == msg_order.decode():
                 self.state = 'l'
                 self.send(l_ack)
-                time.sleep(2)
-                self.send(l_ok)
+                self.call_back_data = l_ok
+                self.timer = threading.Timer(const.turn_over_time,
+                                             self.call_back)
+                self.timer.start()
+
             elif "r" == msg_order.decode():
                 self.state = 'r'
                 self.send(r_ack)
-                time.sleep(2)
-                self.send(r_ok)
+                self.call_back_data = r_ok
+                self.timer = threading.Timer(const.turn_over_time,
+                                           self.call_back)
+                self.timer.start()
             elif "D" == msg_order.decode():
                 self.state = 'f'
                 self.send(D_ack)
-                self.send(D_ok)
+                self.call_back_data = D_ok
+                self.timer = threading.Timer(const.turn_over_time,
+                                           self.call_back)
+                self.timer.start()
+            elif "B" == msg_order.decode():
+                self.state = 'b'
+                self.send(B_ack)
+                self.call_back_data = B_ok
+                self.timer = threading.Timer(const.turn_over_time,
+                                           self.call_back)
+                self.timer.start()
             elif "p" == msg_order.decode():
                 self.send(p_ack)
             elif "F" == msg_order.decode():
                 self.state = 'f'
                 self.send(F_ack)
-            elif "B" == msg_order.decode():
+            elif "K" == msg_order.decode():
                 self.state = 'b'
-                self.send(B_ack)
+                self.send(K_ack)
             elif "S" == msg_order.decode():
                 self.state = 's'
                 self.send(S_ack)
