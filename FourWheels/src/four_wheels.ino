@@ -15,17 +15,21 @@
 #define TRUE 1
 #define FALSE 0
 
-enum dist_go_states {
-  NOT_DIST_GO,
-  WAIT_D_ORDER,
-  DIST_MOVING,
-  DIST_GO_PAUSE
-};
+#define SPECAIL_NUM 1
+#define PULSE_PER_CM 66
+
+//enum dist_go_states {
+//  NOT_DIST_GO,
+//  WAIT_D_ORDER,
+//  DIST_MOVING,
+//  DIST_GO_PAUSE
+//};
 
 enum SYSTEM_MODE{
   NORMAL_MODE,
   STEP_TURN_MODE,
-  DIST_GO_MODE
+  DIST_GO_MODE,
+  MAP_MODE
 };
 
 SYSTEM_MODE current_system_mode = NORMAL_MODE;
@@ -38,10 +42,11 @@ unsigned int step_count = 0;
 unsigned int steps_needed = 0;
 char step_turn_mode = 'N';
 
-unsigned int std_length = 0;
-unsigned int dist_in_std_lenght = 0;
-unsigned int count_std_length = 0;
-dist_go_states current_dist_go_states = NOT_DIST_GO;
+unsigned int dist_in_cm = 0;
+unsigned int count_in_cm = 0;
+
+/*---map mode---*/
+unsigned long map_dist_pulses = 0;
 
 void setup()
 {
@@ -71,29 +76,35 @@ void setup()
   OCR4A = SYSTEM_CLOCK / BEST_PWM/2;
   pinMode(PWM_R, OUTPUT);
 }
+void enable_itrp() {
+	attachInterrupt(0, port0_interrupt_handler, CHANGE);
+}
+void disable_itrp(){
+	detachInterrupt(0);
+}
 void start_step_turn(char *rcv_ch){
   switch(rcv_ch[0]) {
-    case 'y':// turing left some steps.
-      step_turn_mode = 'y';
-      change_wheel_direction('s');
+    case 'l':// turing left some steps.
+      step_turn_mode = 'l';
+      stop_car();
       step_count = 0;
       steps_needed = rcv_ch[1] * 256;
       steps_needed += (unsigned char)rcv_ch[2];
-      Serial1.println("y_ack");
-      Serial1.print("try to step left ");
+      Serial1.println("l_ack");
       Serial1.println(steps_needed);
-      change_wheel_direction('l');
+      state = 'l';
+      turn_left();
       break;
-    case 'z':// step right.
-      step_turn_mode = 'z';
-      change_wheel_direction('s');
+    case 'r':// step right.
+      step_turn_mode = 'r';
+      stop_car();
       step_count = 0;
       steps_needed = rcv_ch[1] * 256;
       steps_needed += (unsigned char)rcv_ch[2];
-      Serial1.println("z_ack");
-      Serial1.print("try to step right ");
+      Serial1.println("r_ack");
       Serial1.println(steps_needed);
-      change_wheel_direction('r');
+      state =  'r';
+      turn_right();
       break;
     default:
       break;
@@ -101,69 +112,67 @@ void start_step_turn(char *rcv_ch){
 }
 void port0_interrupt_handler()
 {
-//  if(digitalRead(2) == 0) {
-//      ++step_count;
-//  }
   if(current_system_mode == STEP_TURN_MODE) {
       ++step_count;
       if(step_count >= steps_needed) {
+          disable_itrp();
           stop_car();
-          Serial1.print(step_turn_mode);
+          Serial1.print(turn_side);
           Serial1.println("_ok");
           current_system_mode = NORMAL_MODE;
       }
   }else if(current_system_mode == DIST_GO_MODE) {
       ++step_count;
-      if(count_std_length >= dist_in_std_lenght) {
+      if(count_in_cm >= dist_in_cm) {
           stop_car();
-//          current_system_mode = NORMAL_MODE;
-          current_dist_go_states = WAIT_D_ORDER;
           Serial1.println("D_ok");
       }
-      if(step_count >= std_length) {
-          ++ count_std_length;
-          step_count -= std_length;
+      if(step_count >= PULSE_PER_CM) {
+          ++ count_in_cm;
+          step_count -= PULSE_PER_CM;
       }
+  }else if(MAP_MODE == current_system_mode) {
+	  ++ map_dist_pulses;
   }
 }
-void micro_move(char *rcv_ch) {
-  unsigned int time_to_move = rcv_ch[1] * 256;
-  time_to_move += (unsigned char)rcv_ch[2];
-  switch(rcv_ch[0]) {
-    case 'H':
-      turn_left();
-      delay(time_to_move);
-      stop_car();
-      Serial1.println("H_ok");
-      break;
-    case 'L':
-      turn_right();
-      delay(time_to_move);
-      stop_car();
-      Serial1.println("L_ok");
-      break;
-    case 'J':
-      go_backward();
-      delay(time_to_move);
-      stop_car();
-      Serial1.println("J_ok");
-      break;
-    case 'K':
-      go_forward();
-      delay(time_to_move);
-      stop_car();
-      Serial1.println("K_ok");
-      break;
-    default:
-      break;
-  }
-}
+//void micro_move(char *rcv_ch) {
+//  unsigned int time_to_move = rcv_ch[1] * 256;
+//  time_to_move += (unsigned char)rcv_ch[2];
+//  switch(rcv_ch[0]) {
+//    case 'H':
+//      turn_left();
+//      delay(time_to_move);
+//      stop_car();
+//      Serial1.println("H_ok");
+//      break;
+//    case 'L':
+//      turn_right();
+//      delay(time_to_move);
+//      stop_car();
+//      Serial1.println("L_ok");
+//      break;
+//    case 'J':
+//      go_backward();
+//      delay(time_to_move);
+//      stop_car();
+//      Serial1.println("J_ok");
+//      break;
+//    case 'K':
+//      go_forward();
+//      delay(time_to_move);
+//      stop_car();
+//      Serial1.println("K_ok");
+//      break;
+//    default:
+//      break;
+//  }
+//}
 void change_pwm(char *rcv_ch, unsigned int *p_pwm,char channel)
 {
   *p_pwm = rcv_ch[1] * 256;
   *p_pwm += (unsigned char)rcv_ch[2];
   Serial1.print("rcv:pwm=");
-  Serial1.print(*p_pwm);
+  Serial1.println(*p_pwm);
   if (channel == 'l')
   {
     ICR3  = SYSTEM_CLOCK / *p_pwm;
@@ -174,14 +183,11 @@ void change_pwm(char *rcv_ch, unsigned int *p_pwm,char channel)
     ICR4 = SYSTEM_CLOCK / *p_pwm;
     OCR4A = SYSTEM_CLOCK / *p_pwm /2;
   }
-  Serial1.println("p_ack");
-  Serial1.print(channel);
-  Serial1.println(" pwm changed\n");
 }
-void change_state(char order)
-{
-  change_wheel_direction(order);
-}
+// void change_state(char order)
+// {
+//   change_wheel_direction(order);
+// }
 void brake(int mil_seconds) {
   pinMode(PWM_L, INPUT);
   pinMode(PWM_R, INPUT);
@@ -193,7 +199,6 @@ void start_car(){
 }
 
 void go_forward() {
-    state = 'f';
     Serial1.println("try to go forward");
     digitalWrite(DIR_L, 1);
     digitalWrite(DIR_R, 0);
@@ -215,7 +220,6 @@ void stop_car() {
 }
 
 void turn_left() {
-    state = 'l';
     Serial1.println("try to turn left");
     digitalWrite(DIR_L, 0);
     digitalWrite(DIR_R, 0);
@@ -225,7 +229,6 @@ void turn_left() {
 }
 
 void turn_right() {
-    state = 'r';
     Serial1.println("try to turn right");
     digitalWrite(DIR_L, 1);
     digitalWrite(DIR_R, 1);
@@ -235,42 +238,40 @@ void turn_right() {
 }
 
 void go_backward() {
-    state = 'b';
-    Serial1.println("try to run back");
     digitalWrite(DIR_L, 0);
     digitalWrite(DIR_R, 1);
     digitalWrite(ENA_L, 1);
     digitalWrite(ENA_R, 1);
     start_car();
 }
-void change_wheel_direction(char order)
-{
-  switch (order)
-  {
-  case 's':
-    stop_car();
-    Serial1.println("s_ack");
-    break;
-  case 'f':
-    go_forward();
-    Serial1.println("f_ack");
-    break;
-  case 'l':
-    turn_left();
-    Serial1.println("l_ack");
-    break;
-  case 'r':
-    turn_right();
-    Serial1.println("r_ack");
-    break;
-  case 'b':
-    Serial1.println("b_ack");
-    go_backward();
-    break;
-  default:
-    break;
-  }
-}
+// void change_wheel_direction(char order)
+// {
+//   switch (order)
+//   {
+//   case 's':
+//     stop_car();
+//     Serial1.println("s_ack");
+//     break;
+//   case 'f':
+//     go_forward();
+//     Serial1.println("f_ack");
+//     break;
+//   case 'l':
+//     turn_left();
+//     Serial1.println("l_ack");
+//     break;
+//   case 'r':
+//     turn_right();
+//     Serial1.println("r_ack");
+//     break;
+//   case 'b':
+//     Serial1.println("b_ack");
+//     go_backward();
+//     break;
+//   default:
+//     break;
+//   }
+// }
 void process_msg(char rcv_ch[3])
 {
   int msg_processed = 0;
@@ -278,20 +279,53 @@ void process_msg(char rcv_ch[3])
     switch(current_system_mode) {
       case NORMAL_MODE:
         msg_processed = process_normal(rcv_ch);
-      break;
-
+        break;
       case STEP_TURN_MODE:
         msg_processed = process_step_turn(rcv_ch);
-      break;
-
+        break;
       case DIST_GO_MODE:
         msg_processed = process_dist_go(rcv_ch);
-      break;
+        break;
 
       default:
-      break;
+        break;
+    }
+    if(FALSE == msg_processed) {
+      if (FALSE == change_mode(rcv_ch[0]) ) {
+    	  Serial1.println("!Error: no such order");
+    	  return;
+      }
     }
   }
+
+
+}
+
+int change_mode(char order) {
+	switch(order) {
+	case 's':
+	case 'f':
+	case 'b':
+	case 'p':
+		current_system_mode = NORMAL_MODE;
+		break;
+	case 'l':
+	case 'r':
+		current_system_mode = STEP_TURN_MODE;
+		break;
+	case 'D':
+	case 'B':
+		current_system_mode = DIST_GO_MODE;
+		break;
+	case 'F':
+	case 'K':
+	case 'S':
+		current_system_mode = MAP_MODE;
+		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
 }
 
 
@@ -300,179 +334,198 @@ int process_normal(char rcv_ch[3]) {
 
   switch (rcv_ch[0])
   {
-  case 'p':
-    change_pwm(rcv_ch, &pwm,  'l');
-    change_pwm(rcv_ch, &pwm, 'r');
-    break;
-  case 'y':// step left.
-  case 'z':// step right.
-    //start_step_turn(rcv_ch);
-    stop_car();
-    current_system_mode = STEP_TURN_MODE;
-    return FALSE;
-    break;
-  case 'd':// set standard length(dist go mode)
-    stop_car();
-    current_system_mode = DIST_GO_MODE;
-    return FALSE;
-    break;
-  case 'H':
-  case 'J':
-  case 'K':
-  case 'L':
-    micro_move(rcv_ch);
-    break;
-  default:
-    change_state(rcv_ch[0]);
-    break;
+    case 'p':
+      change_pwm(rcv_ch, &pwm,  'l');
+      change_pwm(rcv_ch, &pwm, 'r');
+      Serial1.println("p_ack");
+      break;
+    case 's':
+      stop_car();
+      Serial1.println("s_ack");
+      break;
+    case 'f':
+    	state = 'f';
+      go_forward();
+      Serial1.println("f_ack");
+      break;
+    case 'b':
+    	state = 'b';
+      Serial1.println("b_ack");
+      go_backward();
+      break;
+    default:
+      return FALSE;
+      break;
   }
   return TRUE;
+}
+
+int process_map(char rcv_ch[3]) {
+	char order = rcv_ch[0];
+	switch(order) {
+	case 'F':
+		Serial1.println("F_ack");
+		map_dist_pulses = 0;
+		current_system_mode = MAP_MODE;
+		state = 'F';
+		enable_itrp();
+		go_forward();
+		break;
+	case 'K':
+		/* go backward*/
+		Serial1.println("K_ack");
+		map_dist_pulses = 0;
+		current_system_mode = MAP_MODE;
+		state = 'K';
+		enable_itrp();
+		go_backward();
+		break;
+	case 'S':
+		stop_car();
+		print('S');
+		println(map_dist_pulses / PULSE_PER_CM);
+		break;
+	default:
+		return FALSE;
+		break;
+	}
+	return TRUE;
 }
 
 int process_step_turn(char rcv_ch[3]) {
-  if('y' == rcv_ch[0] || 'z' == rcv_ch[0]) {
+  if('l' == rcv_ch[0] || 'r' == rcv_ch[0]) {
     start_step_turn(rcv_ch);
     return TRUE;
   }else {
-    current_system_mode = NORMAL_MODE;
-    exit_step_turn();
     return FALSE;
   }
 }
 
-void exit_step_turn() {
-  stop_car();
-}
-
 int process_dist_go(char rcv_ch[3]) {
-  unsigned int _2bytes = rcv_ch[1] * 256;
-  _2bytes += (unsigned char)rcv_ch[2];
-  switch(current_dist_go_states) {
-    case NOT_DIST_GO:
-      if('d' == rcv_ch[0]) {
-          if(0 != _2bytes) {
-            std_length = _2bytes;
-            Serial1.println("d_ack");
-            current_dist_go_states = WAIT_D_ORDER;
-            stop_car();
-          }else {
-            exit_dist_go("zero data");
-            return FALSE;
-          }
-      } else {
-          exit_dist_go("wrong order, NOT_DIST_GO");
-          return FALSE;
-      }
-      break;
-    case WAIT_D_ORDER:
-      return process_dist_go_waiting(rcv_ch, _2bytes);
-      break;
-    case DIST_MOVING:
-      if('w' == rcv_ch[0]) {
-        stop_car();
-        Serial1.println("w_ack");
-        current_dist_go_states = DIST_GO_PAUSE;
-      } else {
-        exit_dist_go("wrong order, DIST_MOVING");
-        Serial1.println(rcv_ch[0]);
-        return FALSE;
-      }
-      break;
-    case DIST_GO_PAUSE:
-      if('g' == rcv_ch[0]) {
-        go_forward();
-        Serial1.println("g_ack");
-        current_dist_go_states = DIST_MOVING;
-      } else {
-        exit_dist_go("wrong order, DIST_GO_PAUSE");
-        return FALSE;
-      }
-      break;
+  switch(rcv_ch[0]) {
+  case 'D':
+	  if('D' == state) {
+		  break;
+	  }
+  case 'B':
+	  if('B' == state) {
+		  break;
+	  }
+	  go_dist(rcv_ch);
+	  break;
+  default:
+	  return FALSE;
+	  break;
+
   }
   return TRUE;
 }
 
-int process_dist_go_waiting(char rcv_ch[3], unsigned int _2bytes) {
-      if('D' == rcv_ch[0]) {
-          if(0 != _2bytes) {
-            dist_in_std_lenght = _2bytes;
-            Serial1.println("D_ack");
-            step_count = 0;
-            count_std_length = 0;
-            current_dist_go_states = DIST_MOVING;
-            go_forward();
-          } else {
-            exit_dist_go("zero data");
-            return FALSE;
-          }
-      } else if('B' == rcv_ch[0]) {
-          // go backwards.
-          if(0 != _2bytes) {
-            dist_in_std_lenght = _2bytes;
-            Serial1.println("B_ack");
-            step_count = 0;
-            count_std_length = 0;
-            current_dist_go_states = DIST_MOVING;
-            go_backward();
-          } else {
-            exit_dist_go("zero data");
-            return FALSE;
-          }
-      } else if('d' == rcv_ch[0]) {
-          if(0 != _2bytes) {
-            std_length = _2bytes;
-            Serial1.println("d_ack");
-            current_dist_go_states = WAIT_D_ORDER;
-            stop_car();
-          }else {
-            exit_dist_go("zero data");
-            return FALSE;
-          }
-      }
-      else {
-        exit_dist_go("wrong order, WAIT_D_ORDER");
-        Serial1.println(rcv_ch[0]);
-        return FALSE;
-      }
-      return TRUE;
+void go_dist(char * rcv_ch){
+  unsigned int _2bytes = rcv_ch[1] * 256;
+  _2bytes += (unsigned char)rcv_ch[2];
+  stop_car();
+  current_system_mode = DIST_GO_MODE;
+  step_count = 0;
+  count_in_cm = 0;
+  dist_in_cm = _2bytes;
+  if('B' == rcv_ch[0]) {
+	  go_backward();
+	  state = 'B';
+  }else if('D' == rcv_ch[0]) {
+	  go_forward();
+	  state = 'D';
+  }
+  return;
 }
 
-void exit_dist_go(char * err_msg) {
-    stop_car();
-    current_system_mode = NORMAL_MODE;
-    current_dist_go_states = NOT_DIST_GO;
-    Serial1.print("exit_dist_go");
-    Serial1.println(current_dist_go_states);
-    Serial1.print("-->");
-    Serial1.println(err_msg);
-}
+//int process_dist_go_waiting(char rcv_ch[3], unsigned int _2bytes) {
+//      if('D' == rcv_ch[0]) {
+//          if(0 != _2bytes) {
+//            dist_in_std_lenght = _2bytes;
+//            Serial1.println("D_ack");
+//            step_count = 0;
+//            count_in_cm = 0;
+//            current_dist_go_states = DIST_MOVING;
+//            go_forward();
+//          } else {
+//            exit_dist_go("zero data");
+//            return FALSE;
+//          }
+//      } else if('B' == rcv_ch[0]) {
+//          // go backwards.
+//          if(0 != _2bytes) {
+//            dist_in_std_lenght = _2bytes;
+//            Serial1.println("B_ack");
+//            step_count = 0;
+//            count_in_cm = 0;
+//            current_dist_go_states = DIST_MOVING;
+//            go_backward();
+//          } else {
+//            exit_dist_go("zero data");
+//            return FALSE;
+//          }
+//      } else if('d' == rcv_ch[0]) {
+//          if(0 != _2bytes) {
+//            std_length = _2bytes;
+//            Serial1.println("d_ack");
+//            current_dist_go_states = WAIT_D_ORDER;
+//            stop_car();
+//          }else {
+//            exit_dist_go("zero data");
+//            return FALSE;
+//          }
+//      }
+//      else {
+//        exit_dist_go("wrong order, WAIT_D_ORDER");
+//        Serial1.println(rcv_ch[0]);
+//        return FALSE;
+//      }
+//      return TRUE;
+//}
 
+// void exit_dist_go(char * err_msg) {
+//     stop_car();
+//     current_system_mode = NORMAL_MODE;
+//     current_dist_go_states = NOT_DIST_GO;
+//     Serial1.print("exit_dist_go");
+//     Serial1.println(current_dist_go_states);
+//     Serial1.print("-->");
+//     Serial1.println(err_msg);
+// }
+void filter_msg(char *msg) {
+  char order = msg[0];
+  switch (order) {
+    case 'Q': /*ask state*/
+      Serial1.println(state);
+      break;
+    default:
+      process_msg(msg);
+      break;
+  }
+  return;
+}
 void loop()
 {
-  //Serial1.println("hello");
-  //Serial.println("world");
-  //Serial1.println("hello");
   char rcv_ch[3] = { 0 };
-  if (Serial1.available() >= TOTAL_BYTES)
-  {
+  if (Serial1.available() >= TOTAL_BYTES) {
     char tag = Serial1.read();
-    if (tag == HEADER)
-    {
+    if (tag == HEADER) {
       rcv_ch[0] = Serial1.read();
       rcv_ch[1] = Serial1.read();
       rcv_ch[2] = Serial1.read();
-      process_msg(rcv_ch);
+      filter_msg(rcv_ch);
     }
   }
-  check_step_counter();
+//  check_step_counter();
 }
-void check_step_counter(){
-
-  if(step_turn_mode != 'N') {
-    // we are in step turning mode.
-    if(step_count >= steps_needed) {
-      change_wheel_direction('s');
-      step_turn_mode = 'N';
-    }
-  }
-}
+//void check_step_counter(){
+//
+//  if(turn_side != 'N') {
+//    // we are in step turning mode.
+//    if(step_count >= steps_needed) {
+//      change_wheel_direction('s');
+//      turn_side = 'N';
+//    }
+//  }
+//}
