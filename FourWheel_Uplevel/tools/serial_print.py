@@ -1,11 +1,12 @@
 
+from __future__ import print_function
 import serial
 from platform import platform
 import time
 
 
 if 'Linux' in platform():
-    PORT_PREFIX = '/dev/ttyS'
+    PORT_PREFIX = '/dev/ttyUSB'
 elif 'Windows' in platform():
     PORT_PREFIX = 'com'
 
@@ -65,9 +66,11 @@ class SerialMonitor(object):
         return False
 
     def loop(self):
-        self.rcv_uart_msg()
-        for pack in self.msg_list:
-            print pack
+        while True:
+            self.rcv_uart_msg()
+            for pack in self.msg_list:
+                print("rcv:%s" % repr(pack))
+            self.msg_list = []
 if __name__ == '__main__':
     monitor = SerialMonitor()
     monitor.loop()

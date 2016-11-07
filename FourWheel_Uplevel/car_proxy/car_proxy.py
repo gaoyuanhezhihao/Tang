@@ -10,7 +10,7 @@ import time
 from const_var import const
 
 if 'Linux' in platform():
-    PORT_PREFIX = '/dev/ttyS'
+    PORT_PREFIX = '/dev/ttyUSB'
 elif 'Windows' in platform():
     PORT_PREFIX = 'com'
 const.retry_limit = 2  # if failed after 2 retries, Raise error.
@@ -63,6 +63,10 @@ class CarProxy():
         if data1 is None or data2 is None:
             data1 = 0x00
             data2 = 0x00
+        # self.port.write('H')
+        # self.port.write(order)
+        # self.port.write(struct.pack('!B', data1))
+        # self.port.write(struct.pack('!B', data2))
         msg = 'H'
         msg += order
         msg += struct.pack('!B', data1)
