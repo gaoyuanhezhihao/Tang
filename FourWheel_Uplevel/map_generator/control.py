@@ -18,8 +18,6 @@ class MapControl():
         self.init_logger()
         # init car.
         self.car = CarProxy(self.logger)
-        # set standard length of the map .
-        self.car.set_map_std_dist(MAP_STD_DIST)
         # init view module.
         self.view = MapView(self.logger, self)
         # add data base.
