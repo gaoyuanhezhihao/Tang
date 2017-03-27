@@ -143,8 +143,6 @@ void port0_interrupt_handler()
 	  ++ map_dist_pulses;
   }
 }
-
-
 //void micro_move(char *rcv_ch) {
 //  unsigned int time_to_move = rcv_ch[1] * 256;
 //  time_to_move += (unsigned char)rcv_ch[2];
@@ -429,7 +427,6 @@ int process_dist_go(char rcv_ch[3]) {
   switch(rcv_ch[0]) {
   case 'D':
 	  if('D' == state) {
-		  Serial1.println("!in D mode...");
 		  break;
 	  }else{
 		  Serial1.println("D_ack");
@@ -441,7 +438,6 @@ int process_dist_go(char rcv_ch[3]) {
 		  break;
 	  }else{
 		  Serial1.println("B_ack");
-		  Serial1.println("!in B mode...");
 		  go_dist(rcv_ch);
 	  }
 	  break;
@@ -481,11 +477,11 @@ void go_dist(char * rcv_ch){
   pwm_now = DIST_GO_PWM;
   enable_itrp();
   if('B' == rcv_ch[0]) {
-	  state = 'B';
 	  step_start('b');
+	  state = 'B';
   }else if('D' == rcv_ch[0]) {
-	  state = 'D';
 	  step_start('f');
+	  state = 'D';
   }
   return;
 }
@@ -506,7 +502,7 @@ void go_dist(char * rcv_ch){
 //      } else if('B' == rcv_ch[0]) {
 //          // go backwards.
 //          if(0 != _2bytes) {
-//            dist_in_std_lenght = _2bytes;b
+//            dist_in_std_lenght = _2bytes;
 //            Serial1.println("B_ack");
 //            step_count = 0;
 //            count_in_cm = 0;
