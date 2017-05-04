@@ -16,7 +16,9 @@
 #define ENA_X 11
 #define PWM_X 6
 
-void init_control(unsigned int sys_clk, unsigned int pwm) {
+void init_control(unsigned long sys_clk, unsigned int pwm) {
+	Serial.print("sys_clk:");
+	Serial.println(sys_clk);
 	pinMode(DIR_Y, OUTPUT);
 	pinMode(ENA_Y, OUTPUT);
 	pinMode(DIR_X, OUTPUT);
@@ -42,40 +44,40 @@ void init_control(unsigned int sys_clk, unsigned int pwm) {
 void stop_car() {
     digitalWrite(ENA_X, 0);
     digitalWrite(ENA_Y, 0);
-    Serial.println("stop");
+    Serial1.println("stop");
 }
 
 void up_y() {
-    Serial.println("up_y");
+    Serial1.println("up_y");
     digitalWrite(DIR_Y, 1);
     digitalWrite(ENA_Y, 1);
 }
 
 void down_y(){
-    Serial.println("down_y");
+    Serial1.println("down_y");
     digitalWrite(DIR_Y, 0);
     digitalWrite(ENA_Y, 1);
 }
 
 void stop_y(){
-    Serial.println("stop_y");
+    Serial1.println("stop_y");
     digitalWrite(ENA_Y, 0);
 }
 
 void left_x(){
-    Serial.println("left_x");
-    digitalWrite(DIR_X, 1);
-    digitalWrite(ENA_X, 1);
-}
-
-void right_x(){
-	Serial.println("right_x");
+    Serial1.println("left_x");
     digitalWrite(DIR_X, 0);
     digitalWrite(ENA_X, 1);
 }
 
+void right_x(){
+	Serial1.println("right_x");
+    digitalWrite(DIR_X, 1);
+    digitalWrite(ENA_X, 1);
+}
+
 void stop_x() {
-	Serial.println("stop_x");
+	Serial1.println("stop_x");
     digitalWrite(ENA_X, 0);
 
 }
@@ -101,3 +103,9 @@ void move_x(const char dir, const int time) {
 	stop_x();
 }
 
+void move_x_org() {
+	left_x();
+}
+void move_y_org() {
+	down_y();
+}

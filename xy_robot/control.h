@@ -19,5 +19,5 @@ void right_x();
 void stop_x() ;
 void move_y(const char dir, const int time) ;
 void move_x(const char dir, const int time) ;
-void init_control(unsigned int sys_clk, unsigned int pwm) ;
+void init_control(unsigned long sys_clk, unsigned int pwm) ;
 #endif /* CONTROL_H_ */

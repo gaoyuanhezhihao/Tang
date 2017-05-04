@@ -22,12 +22,14 @@ void init_serial() {
 
 void process_msg(char rcv_ch[3]) {
 	unsigned int time = 0;
-	time = rcv_ch[1] * 256;
-	time += (unsigned char)rcv_ch[2];
-
+	time = (unsigned int)rcv_ch[1] * 256;
+	time += (unsigned int)rcv_ch[2];
 	switch(rcv_ch[0]) {
 	case 'l':
 		move_x('l', time);
+		break;
+	case 'x':
+		move_x_org();
 		break;
 	case 'r':
 		move_x('r', time);
@@ -37,6 +39,13 @@ void process_msg(char rcv_ch[3]) {
 		break;
 	case 'd':
 		move_y('d', time);
+		break;
+	case 'y':
+		move_y_org();
+		break;
+	case 's':
+		stop_x();
+		stop_y();
 		break;
 	default:
 		Serial1.println("Error! wrong order");
@@ -57,5 +66,7 @@ void check_serial() {
 	    }else {
 	    	Serial1.println("Header fail");
 	    }
+	  }else{
+		 // Serial1.println("none");
 	  }
 }
