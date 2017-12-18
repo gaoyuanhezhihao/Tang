@@ -8,6 +8,7 @@ import serial
 import struct
 import time
 from Queue import Queue
+import pdb
 from const_var import const
 
 if 'Linux' in platform():
@@ -20,6 +21,7 @@ const.ok_time_lmt = 2.0
 const.pulses_per_degree = 1720/90
 const.pulses_per_cm = 65.57
 const.split_flag = '\r\n'
+const.peek_interval = 2
 # const.peek_interval = 0.5  #peek state every 500ms
 const.STD_PWM = 3200
 
@@ -107,10 +109,10 @@ class CarProxy():
         self.step_left(steps)
 
     def step_left(self, steps):
-        self.send_verify_order(order='x', data1=steps/256,
+        self.send_verify_order(order='L', data1=steps/256,
                                data2=steps % 256)
         self.start_turn_time = time.time()
-        self.state = 'x'
+        self.state = 'L'
 
     def turn_right(self):
         self.send_verify_order(order='r')
@@ -121,16 +123,16 @@ class CarProxy():
         self.step_right(steps)
 
     def step_right(self, steps):
-        self.send_verify_order(order='y', data1=steps/256,
+        self.send_verify_order(order='R', data1=steps/256,
                                data2=steps % 256)
         self.start_turn_time = time.time()
-        self.state = 'y'
+        self.state = 'R'
 
-    def Forward(self):
+    def forward(self):
         self.send_verify_order(order='f')
         self.state = 'f'
 
-    def Backward(self):
+    def backward(self):
         self.send_verify_order(order='b')
         self.state = 'b'
 
@@ -158,7 +160,7 @@ class CarProxy():
         self.start_go_dist_time = time.time()
         self.state = 'K'
 
-    def Stop(self):
+    def stop(self):
         self.send_verify_order(order='s')
         self.state = 's'
 
@@ -184,18 +186,19 @@ class CarProxy():
         return True, rcv
 
     def check_ok_msg(self):
-        if self.state in ['x', 'y', 'F', 'B', 'I', 'K']:
+        if self.state in ['L', 'R', 'F', 'B', 'I', 'K']:
             '''car is in turning state.'''
             ok_reply = '%s_ok' % self.state
             for idx, pack in enumerate(self.msg_list):
+                # pdb.set_trace()
                 if ok_reply in pack:
                     # got right reply.
                     self.state = 's'
                     del self.msg_list[0: idx+1]
-                    self.logger.info("get reply:" + repr(pack))
+                    self.logger.info("OK_MSG:" + repr(pack))
                     return True
             # check if waits too long?
-            if time.time() - self.start_turn_time > const.wait_turn_limit:
+            if time.time() - self.start_turn_time > const.ok_time_lmt:
                 self.__peek_state()
 
     def __peek_state(self):
@@ -235,6 +238,7 @@ class CarProxy():
     def routines(self):
         self.rcv_uart_msg()
         self.check_ok_msg()
+        self.read_odom()
 
     def rcv_uart_msg(self):
         byte_2_read = self.port.inWaiting()
@@ -245,6 +249,7 @@ class CarProxy():
             if len(new_msg_list) > 1:
                 self.tmp_msg = new_msg_list[-1]
                 self.msg_list += new_msg_list[0:-1]
+                self.logger.info("msg list add:{}".format(new_msg_list[0:-1]))
                 return True
         return False
 
@@ -253,11 +258,13 @@ class CarProxy():
         if bytes_waiting >= 1:
             rcv = self.odom_port.read(bytes_waiting)
             self.tmp_odom_msg += rcv
-            new_msg_list = self.tmp_msg.split(const.split_flag)
+            new_msg_list = self.tmp_odom_msg.split(const.split_flag)
 
             self.tmp_odom_msg = new_msg_list[-1]
             for pack in new_msg_list[:-1]:
                 if pack[:3] == 'cm:':
-                    self.cm_que.put(int(pack[3:]))
+                    self.logger.info("cm que << {}".format(float(pack[3:])))
+                    self.cm_que.put(float(pack[3:]))
                 elif pack[:5] == 'step:':
-                    self.step_que.put(int(pack[5:]))
+                    self.logger.info("step que << {}".format(float(pack[5:])))
+                    self.step_que.put(float(pack[5:]))

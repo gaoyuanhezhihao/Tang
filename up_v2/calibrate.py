@@ -1,7 +1,9 @@
+#! /usr/bin/python2
 # calibrate.py
 '''
 This software is for Tang's car.
 '''
+import os
 import struct
 import serial
 import Tkinter
@@ -9,12 +11,13 @@ import time
 import pickle
 import pdb
 import logging
+from logging import handlers
 from car_proxy import CarProxy
 from const_var import const
 
 log_name = 'Calibrate'
 
-class MapView():
+class App():
 
     def init_log(self):
         _LOG_FORMAT = '%(asctime)s (%(filename)s/%(funcName)s)' \
@@ -41,17 +44,45 @@ class MapView():
         self.init_log()
         self.degree = 0
 
-        self.init_map_panel()
-        self.car = CarProxy
+        self.init_panel()
+        self.car = CarProxy(self.logger)
+
+    def change_speed(self):
+        speed = self.speed_entry.get()
+        self.car.change_speed(speed)
 
     def forward(self):
-        self.car.go_forward()
+        self.car.forward()
 
     def backward(self):
-        self.car.go_backward()
+        self.car.backward()
+
+    def forward_dist(self):
+        dist = int(self.dist_entry.get())
+        self.car.forward_dist(dist)
+
+    def backward_dist(self):
+        dist = int(self.dist_entry.get())
+        self.car.backward_dist(dist)
+
+    def forward_step(self):
+        step = int(self.step_entry.get())
+        self.car.forward_step(step)
+
+    def backward_step(self):
+        step = int(self.step_entry.get())
+        self.car.backward_step(step)
 
     def stop(self):
         self.car.stop()
+
+    def degree_left(self):
+        degree = float(self.degree_entry.get())
+        self.car.turn_left_degree(degree)
+
+    def degree_right(self):
+        degree = float(self.degree_entry.get())
+        self.car.turn_right_degree(degree)
 
     def left_step(self):
         steps = int(self.step_entry.get())
@@ -61,7 +92,7 @@ class MapView():
         steps = int(self.step_entry.get())
         self.car.step_right(steps)
 
-    def init_map_panel(self):
+    def init_panel(self):
         self.map_panel = Tkinter.Tk()
         self.panel_now = self.map_panel
 
@@ -147,5 +178,13 @@ class MapView():
                                              command=self.right_step)
         self.step_right_btn.pack()
 
-    def update_panel(self):
-        self.panel_now.update()
+
+    def run(self):
+        while True:
+            self.panel_now.update()
+            self.car.routines()
+
+
+if __name__ == '__main__':
+    app = App()
+    app.run()
