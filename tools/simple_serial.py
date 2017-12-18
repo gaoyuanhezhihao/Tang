@@ -3,6 +3,7 @@ from __future__ import print_function
 import serial
 from platform import platform
 import time
+import Tkinter
 
 
 if 'Linux' in platform():
@@ -40,6 +41,7 @@ class SerialMonitor(object):
         self.start_turn_time = time.time()
         self.msg_list = []
         self.last_peek_time = 0
+        self.init_gui()
 
     def serial_ports(self):
         ports = [PORT_PREFIX + str(i) for i in range(256)]
@@ -52,6 +54,22 @@ class SerialMonitor(object):
             except (OSError, serial.SerialException):
                 pass
         return result
+
+    def send(self):
+        msg = self.msg_entry.get()
+        self.port.write(msg+const.split_flag)
+
+    def init_gui(self):
+        self.__panel = Tkinter.Tk()
+        self.msg_set = Tkinter.StringVar()
+        self.msg_entry = Tkinter.Entry(self.__panel,
+                                          textvariable=self.msg_set)
+        self.msg_entry.pack()
+
+        self.send_btn = Tkinter.Button(self.__panel,
+                                            text="send",
+                                            command=self.send)
+        self.send_btn.pack()
 
     def rcv_uart_msg(self):
         byte_2_read = self.port.inWaiting()
@@ -71,6 +89,8 @@ class SerialMonitor(object):
             for pack in self.msg_list:
                 print("rcv:%s" % repr(pack))
             self.msg_list = []
+            self.__panel.update()
+
 if __name__ == '__main__':
     monitor = SerialMonitor()
     monitor.loop()
