@@ -31,6 +31,22 @@ COM2 = PORT_PREFIX+'1'
 
 class CarProxy():
 
+    def __state_update__(self, msg):
+        if msg[:6] != 'state:' or msg[6] not in valid_states:
+            raise Exception("rcv a wrong state update msg:'{}'".format(msg))
+        self.state = msg[6]
+
+    def __ok_receive__(self, msg):
+        order = msg[0]
+        if order not in valid_states:
+            self.logger.error("rcv a wrong ok msg:'{}'".format(msg))
+            return
+        if order != self.state:
+            self.logger.warning("ok order(%s) != state(%s)" % (order, self.state))
+            return
+        state = 's'
+
+
     def __init__(self, logger):
         self.logger = logger
         # init serial port
@@ -52,8 +68,8 @@ class CarProxy():
         self.step_que = Queue()
         self.last_peek_time = 0
 
-        self.ack_waiting = None
-        self.ok_waiting = None
+        # self.rcv_callback = {r'._ok': self.__ok_receive__,
+                             # r'state:.': self.__state_update__}
 
     def serial_ports(self):
         ports = [PORT_PREFIX + str(i) for i in range(256)]
@@ -148,13 +164,13 @@ class CarProxy():
         self.start_go_dist_time = time.time()
         self.state = 'B'
 
-    def forward_steps(self, steps):
+    def forward_step(self, steps):
         self.send_verify_order(order='I', data1=steps/256,
                                data2=steps % 256)
         self.start_go_dist_time = time.time()
         self.state = 'I'
 
-    def backward_steps(self, steps):
+    def backward_step(self, steps):
         self.send_verify_order(order='K', data1=steps/256,
                                data2=steps % 256)
         self.start_go_dist_time = time.time()
@@ -165,25 +181,15 @@ class CarProxy():
         self.state = 's'
 
     def __verify_or_retry(self, ack_msg):
-        retry_count = 0
-        while retry_count <= const.retry_limit:
-            retry_count += 1
-            flag, msg = self.rcv_ack(len(ack_msg))
-            if ack_msg in msg:
+        self.rcv_uart_msg()
+        while True:
+            if ack_msg in self.msg_list:
+                i = self.msg_list.index(ack_msg)
+                self.msg_list = self.msg_list[i+1:]
                 return True
+            self.rcv_uart_msg()
         # connection failed.
         raise Exception("Car Error", "RETRY TOO TIMES")
-
-    def rcv_ack(self, msg_len):
-        msg_len += len(const.split_flag)
-        start_time = time.time()
-        bytes_waiting = 0
-        while bytes_waiting < msg_len:
-            if time.time() - start_time > const.ack_time_lmt:
-                return False, "wait too long"
-            bytes_waiting = self.port.inWaiting()
-        rcv = self.port.read(bytes_waiting)
-        return True, rcv
 
     def check_ok_msg(self):
         if self.state in ['L', 'R', 'F', 'B', 'I', 'K']:
@@ -197,31 +203,6 @@ class CarProxy():
                     del self.msg_list[0: idx+1]
                     self.logger.info("OK_MSG:" + repr(pack))
                     return True
-            # check if waits too long?
-            if time.time() - self.start_turn_time > const.ok_time_lmt:
-                self.__peek_state()
-
-    def __peek_state(self):
-        if time.time() - self.last_peek_time < const.peek_interval:
-            # don't peek too frequent.
-            return None
-        else:
-            self.last_peek_time = time.time()
-        count_send = 0
-        while count_send <= const.retry_limit:
-            self.send_verify_order(order='Q')
-            count_send += 1
-            time_send_order = time.time()
-            while time.time() - time_send_order < const.ack_time_lmt:
-                self.rcv_uart_msg()
-                for idx, pack in enumerate(self.msg_list):
-                    if "Q_ack" == pack[0:5]:
-                        self.state = pack[5]
-                        del self.msg_list[0: idx+1]
-                        self.logger.info("updated state to %s" %
-                                         repr(self.state))
-                        return True
-        raise Exception("Car Error", "RETRY TOO TIMES")
 
     def get_car_stae(self):
         retry_count = 0
@@ -244,6 +225,7 @@ class CarProxy():
         byte_2_read = self.port.inWaiting()
         if byte_2_read >= 1:
             rcv = self.port.read(byte_2_read)
+            self.logger.info("rcv:'{}'".format(rcv))
             self.tmp_msg += rcv
             new_msg_list = self.tmp_msg.split(const.split_flag)
             if len(new_msg_list) > 1:

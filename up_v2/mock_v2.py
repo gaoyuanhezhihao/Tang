@@ -19,7 +19,7 @@ const.turn_over_time = 4
 const.log_name = "mock_car"
 const.cm_per_sec = 10
 const.step_per_sec = 50
-const.freq = 5
+const.freq = 0.5
 const.interval = 1.0/const.freq
 
 if 'Linux' in platform():
@@ -30,14 +30,15 @@ elif 'Windows' in platform():
 COM_CMD = PORT_PREFIX+'2'
 COM_ODOM = PORT_PREFIX+'3'
 
-valid_cmd = ['s', 'p', 'l', 'r', 'f', 'b', 'F', 'B', 'L', 'R', 'I', 'K', 'Q']
+valid_cmd = ['s', 'p', 'l', 'r', 'L', 'R', 'f', 'b', 'F', 'B', 'L', 'R', 'I', 'K', 'Q']
 delay_reply_cmd = ['F', 'B', 'L', 'R', 'I', 'K']
 valid_states = ['s', 'f', 'b', 'l', 'r', 'L', 'R', 'F', 'B', 'I', 'K']
-moving_states = ['f', 'b', 'l', 'r', 'F', 'B', 'L', 'R', 'I', 'K']
 
 class MockCar(object):
 
     last_rep_tm = 0
+
+
     def __init__(self):
         self.init_serial()
         self.init_log()
@@ -45,6 +46,8 @@ class MockCar(object):
         self.state = 's'
         self.cm = 0
         self.step = 0
+
+
 
     def init_serial(self):
         print("serial port available:\n")
@@ -90,7 +93,7 @@ class MockCar(object):
 
     def send(self, message, port):
         port.write(message+const.split_flag)
-        self.logger.info("port sent:%s" % message)
+        self.logger.info("port sent:'%s'" % message)
 
     def call_back(self):
         if self.state is not 's':
@@ -111,7 +114,7 @@ class MockCar(object):
                 print("change speed:", message[1], message[2])
             elif msg_order == 'Q':
                 self.logger.info('query state')
-                self.send_order('Q_ack'+self.state)
+                self.send_order('state:'+self.state)
             elif 's' == msg_order:
                 self.cm = 0
                 self.step = 0

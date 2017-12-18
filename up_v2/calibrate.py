@@ -19,6 +19,7 @@ log_name = 'Calibrate'
 
 class App():
 
+
     def init_log(self):
         _LOG_FORMAT = '%(asctime)s (%(filename)s/%(funcName)s)' \
             ' %(name)s %(levelname)s - %(message)s'
@@ -48,7 +49,7 @@ class App():
         self.car = CarProxy(self.logger)
 
     def change_speed(self):
-        speed = self.speed_entry.get()
+        speed = float(self.speed_entry.get())
         self.car.change_speed(speed)
 
     def forward(self):
@@ -134,6 +135,7 @@ class App():
         self.change_speed_btn = Tkinter.Button(self.panel_now,
                                                text="change speed",
                                              command=self.change_speed)
+        self.change_speed_btn.pack()
         # go dist
         self.dist = Tkinter.StringVar()
         self.dist_entry = Tkinter.Entry(self.panel_now,
