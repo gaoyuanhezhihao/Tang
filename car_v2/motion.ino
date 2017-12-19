@@ -18,9 +18,11 @@
 #define PWM_R 6
 
 #define SYSTEM_CLOCK 16000000
-#define DEFAULT_PWM 2200
+#define DEFAULT_PWM 1600
+
 
 unsigned int pwm_now;
+/*	function */
 
 void init_motion(){
 	  pinMode(DIR_L, OUTPUT);
@@ -160,7 +162,7 @@ void go(const char dir) {
 void go_dist(const char dir, unsigned int dist_in_cm){
 	  stop();
 	  state = dir;
-	  count_down_steps(steps);
+	  count_down_cm(dist_in_cm);
 	  switch(dir) {
 	  case 'F':
 		  _forward();
@@ -178,7 +180,7 @@ void go_dist(const char dir, unsigned int dist_in_cm){
 void go_steps(const char dir, unsigned int steps) {
   stop();
   state = dir;
-  count_down_cm(dist_in_cm);
+  count_down_steps(steps);
   switch(dir) {
   case 'I':
 	  _forward();

@@ -1,6 +1,11 @@
 #include <Arduino.h>
 #include "motion.h"
 #include "optical_cnt.h"
+#include "main.h"
+
+//#define DEBUG_LN(s) (Serial.println(s))
+//#define DEBUG(s) (Serial.print(s));
+
 
 #define TOTAL_BYTES 4
 #define TRUE 1
@@ -91,12 +96,14 @@ void loop()
     char tag = Serial1.read();
     if (tag == HEADER) {
       rcv_ch[0] = Serial1.read();
-      DEBUB("rcv:");
+      DEBUG("rcv:");
       DEBUG_LN(rcv_ch[0]);
       rcv_ch[1] = Serial1.read();
       rcv_ch[2] = Serial1.read();
       process_msg(rcv_ch);
+
     }
   }
+  check_report();
 }
 

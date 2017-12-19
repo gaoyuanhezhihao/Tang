@@ -11,7 +11,9 @@
 #define PULSE_PER_CM 66
 #define DIST_GO_PWM 1000
 
-typedef void (*Itrp_Func)();
+
+
+//typedef void (*Itrp_Func)(void);
 unsigned int _cm_needed = 0;
 unsigned int _cm_cnt = 0;
 unsigned int _step_cnt = 0;
@@ -26,20 +28,20 @@ unsigned int get_cm() {
 unsigned int get_step() {
 	return _step_cnt;
 }
-
+void _disable_itrp(){
+	detachInterrupt(0);
+}
 void init_optc_cnt(){
 	pinMode(COUNTER_PORT, INPUT);
     _disable_itrp();
 }
-void set_itrp_handler(Itrp_Func new_itrp){
+void set_itrp_handler(void (*new_itrp)()){
 	attachInterrupt(0, new_itrp, CHANGE);
 }
 //void _enable_itrp() {
 //	attachInterrupt(0, port0_interrupt_handler, CHANGE);
 //}
-void _disable_itrp(){
-	detachInterrupt(0);
-}
+
 
 void cnt_step_itrp(){
 	++ _step_cnt;
@@ -48,10 +50,10 @@ void cnt_step_itrp(){
 void cnt_down_step_itrp(){
 	++ _step_cnt;
     if(_step_cnt >= _steps_needed) {
-        stop_car();
+    	_disable_itrp();
         Serial1.print(state);
         Serial1.println("_ok");
-    	_diable_itrp();
+        stop();
     }
 }
 
@@ -70,16 +72,16 @@ void cnt_down_cm_itrp(){
 		_step_cnt -= PULSE_PER_CM;
 	}
     if(_cm_cnt >= _cm_needed) {
-        stop_car();
+    	_disable_itrp();
         Serial1.print(state);
         Serial1.println("_ok");
-    	_diable_itrp();
+    	stop();
     }
 }
 
 
 void clear_cnt(){
-	_diable_itrp();
+	_disable_itrp();
 
 	_step_cnt = 0;
 	_cm_cnt = 0;
