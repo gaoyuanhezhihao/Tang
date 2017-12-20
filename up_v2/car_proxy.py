@@ -30,6 +30,7 @@ COM1 = PORT_PREFIX+'0'
 COM2 = PORT_PREFIX+'1'
 
 log_name = "car_proxy"
+const.log_dir = './'+log_name
 
 class CarProxy():
 
@@ -48,13 +49,14 @@ class CarProxy():
             return
         state = 's'
 
-
     def init_log(self):
+        if not os.path.exists(const.log_dir):
+            os.makedirs(const.log_dir)
         _LOG_FORMAT = '%(asctime)s (%(filename)s/%(funcName)s)' \
             ' %(name)s %(levelname)s - %(message)s'
         self.logger = logging.getLogger(log_name)
         _handler = logging.handlers.RotatingFileHandler(
-            "./log/" +
+            const.log_dir +
             os.path.basename(__file__)[
                 :-
                 3] +
