@@ -10,6 +10,7 @@ import time
 from Queue import Queue
 import pdb
 from const_var import const
+import os
 
 if 'Linux' in platform():
     PORT_PREFIX = '/dev/ttyUSB'
@@ -28,6 +29,7 @@ const.STD_PWM = 3200
 COM1 = PORT_PREFIX+'0'
 COM2 = PORT_PREFIX+'1'
 
+log_name = "car_proxy"
 
 class CarProxy():
 
@@ -47,8 +49,31 @@ class CarProxy():
         state = 's'
 
 
-    def __init__(self, logger):
+    def init_log(self):
+        _LOG_FORMAT = '%(asctime)s (%(filename)s/%(funcName)s)' \
+            ' %(name)s %(levelname)s - %(message)s'
+        self.logger = logging.getLogger(log_name)
+        _handler = logging.handlers.RotatingFileHandler(
+            "./log/" +
+            os.path.basename(__file__)[
+                :-
+                3] +
+            ".log",
+            maxBytes=102400,
+            backupCount=20)
+        _formatter = logging.Formatter(_LOG_FORMAT)
+        _handler.setFormatter(_formatter)
+        self.logger.addHandler(_handler)
+        self.logger.setLevel(logging.INFO)
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        ch.setFormatter(_formatter)
+        self.logger.addHandler(ch)
+
+    def __init__(self, logger=None):
         self.logger = logger
+        if None is self.logger:
+            self.init_log()
         # init serial port
         ports = self.serial_ports()
         if COM1 not in ports or COM2 not in ports:

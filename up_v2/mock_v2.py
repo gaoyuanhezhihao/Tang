@@ -93,7 +93,7 @@ class MockCar(object):
 
     def send(self, message, port):
         port.write(message+const.split_flag)
-        self.logger.info("port sent:'%s'" % message)
+        # self.logger.info("port sent:'%s'" % message)
 
     def call_back(self):
         if self.state is not 's':
