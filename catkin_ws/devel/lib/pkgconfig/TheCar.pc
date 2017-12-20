@@ -1,0 +1,8 @@
+prefix=/home/hzh/study/car/Tang/catkin_ws/devel
+
+Name: TheCar
+Description: Description of TheCar
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/hzh/study/car/Tang/catkin_ws/devel/lib 
+Requires: 
