@@ -7,26 +7,42 @@ from car_proxy import CarProxy
 
 real_car = CarProxy()
 
+speed = -10000.0
+turn_speed = -10000.0
+
 def twistCallback(data):
     linear = data.linear.x
     angular = data.angular.z
     move(linear, angular)
 
 def move(linear, angular):
+    global speed, turn_speed
     if linear == 0 and angular == 0:
         rospy.loginfo("stop")
         real_car.stop()
     elif linear > 0 and angular == 0:
         rospy.loginfo("forward")
+        if linear != speed:
+            speed = linear
+            real_car.change_speed(speed)
         real_car.forward()
     elif linear < 0 and angular == 0:
         rospy.loginfo("backward")
+        if linear != speed:
+            speed = linear
+            real_car.change_speed(speed)
         real_car.backward()
     elif linear == 0 and angular > 0:
         rospy.loginfo("left")
+        if angular != turn:
+            turn = angular
+            real_car.change_speed(turn)
         real_car.turn_left()
     elif linear == 0 and angular < 0:
         rospy.loginfo("right")
+        if angular != turn:
+            turn = angular
+            real_car.change_speed(turn)
         real_car.turn_right()
     elif linear != 0 and angular != 0:
         rospy.logerr("arc move isn't supported yet!")
