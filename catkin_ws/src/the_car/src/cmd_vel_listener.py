@@ -54,4 +54,9 @@ rospy.init_node('cmd_vel_listener', anonymous=False)
 rospy.on_shutdown(cleanup)
 
 rospy.Subscriber("cmd_vel", Twist, twistCallback)
-rospy.spin()
+# rospy.spin()
+r = rospy.Rate(1)
+while not rospy.is_shutdown():
+    rospy.loginfo("TODO: pub odometry")
+    real_car.routines()
+    r.sleep()

@@ -29,40 +29,23 @@ const.STD_PWM = 3200
 COM1 = PORT_PREFIX+'0'
 COM2 = PORT_PREFIX+'1'
 
-log_name = "car_proxy"
-const.log_dir = './'+log_name
+const.log_dir = './car_proxy.log/'
+
 
 class CarProxy():
-
-    def __state_update__(self, msg):
-        if msg[:6] != 'state:' or msg[6] not in valid_states:
-            raise Exception("rcv a wrong state update msg:'{}'".format(msg))
-        self.state = msg[6]
-
-    def __ok_receive__(self, msg):
-        order = msg[0]
-        if order not in valid_states:
-            self.logger.error("rcv a wrong ok msg:'{}'".format(msg))
-            return
-        if order != self.state:
-            self.logger.warning("ok order(%s) != state(%s)" % (order, self.state))
-            return
-        state = 's'
+    __state__
+    def __set_state__(self, new_state):
+        self.__state__ = new_state
 
     def init_log(self):
         if not os.path.exists(const.log_dir):
             os.makedirs(const.log_dir)
         _LOG_FORMAT = '%(asctime)s (%(filename)s/%(funcName)s)' \
             ' %(name)s %(levelname)s - %(message)s'
-        self.logger = logging.getLogger(log_name)
+        self.logger = logging.getLogger("car_proxy")
         _handler = logging.handlers.RotatingFileHandler(
-            const.log_dir +
-            os.path.basename(__file__)[
-                :-
-                3] +
-            ".log",
-            maxBytes=102400,
-            backupCount=20)
+            const.log_dir + os.path.basename(__file__)[:-3]+".log",
+            maxBytes=102400, backupCount=20)
         _formatter = logging.Formatter(_LOG_FORMAT)
         _handler.setFormatter(_formatter)
         self.logger.addHandler(_handler)
@@ -88,7 +71,7 @@ class CarProxy():
         # self.waiting_turn_ok = ''
         self.tmp_msg = ''
         self.tmp_odom_msg = ''
-        self.state = 's'
+        self.__set_state__('s')
         self.start_turn_time = time.time()
         self.msg_list = []
         self.cm_que = Queue()
@@ -144,68 +127,101 @@ class CarProxy():
         self.__set_pwm(new_pwm)
 
     def turn_left(self):
+        if 'l' == state:
+            self.logger.warn("duplicate '%s' order, ignored"%state)
+            return
         self.send_verify_order(order='l')
-        self.state = 'l'
+        self.__set_state__('l')
 
     def turn_left_degree(self, degree):
         steps = int(degree * const.pulses_per_degree)
         self.step_left(steps)
 
     def step_left(self, steps):
+        if 'L' == state:
+            self.logger.warn("duplicate '%s' order, ignored"%state)
+            return
         self.send_verify_order(order='L', data1=steps/256,
                                data2=steps % 256)
         self.start_turn_time = time.time()
-        self.state = 'L'
+        self.__set_state__('L')
 
     def turn_right(self):
+        if 'r' == state:
+            self.logger.warn("duplicate '%s' order, ignored"%state)
+            return
         self.send_verify_order(order='r')
-        self.state = 'r'
+        self.__set_state__('r')
 
     def turn_right_degree(self, degree):
         steps = int(degree * const.pulses_per_degree)
         self.step_right(steps)
 
     def step_right(self, steps):
+        if 'R' == state:
+            self.logger.warn("duplicate '%s' order, ignored"%state)
+            return
         self.send_verify_order(order='R', data1=steps/256,
                                data2=steps % 256)
         self.start_turn_time = time.time()
-        self.state = 'R'
+        self.__set_state__('R')
 
     def forward(self):
+        if 'f' == state:
+            self.logger.warn("duplicate '%s' order, ignored"%state)
+            return
         self.send_verify_order(order='f')
-        self.state = 'f'
+        self.__set_state__('f')
 
     def backward(self):
+        if 'b' == state:
+            self.logger.warn("duplicate '%s' order, ignored"%state)
+            return
         self.send_verify_order(order='b')
-        self.state = 'b'
+        self.__set_state__('b')
 
     def forward_dist(self, dist_in_cm):
+        if 'F' == state:
+            self.logger.warn("duplicate '%s' order, ignored"%state)
+            return
         self.send_verify_order(order='F', data1=dist_in_cm/256,
                                data2=dist_in_cm % 256)
         self.start_go_dist_time = time.time()
-        self.state = 'F'
+        self.__set_state__('F')
 
     def backward_dist(self, dist_in_cm):
+        if 'B' == state:
+            self.logger.warn("duplicate '%s' order, ignored"%state)
+            return
         self.send_verify_order(order='B', data1=dist_in_cm/256,
                                data2=dist_in_cm % 256)
         self.start_go_dist_time = time.time()
-        self.state = 'B'
+        self.__set_state__('B')
 
     def forward_step(self, steps):
+        if 'I' == state:
+            self.logger.warn("duplicate '%s' order, ignored"%state)
+            return
         self.send_verify_order(order='I', data1=steps/256,
                                data2=steps % 256)
         self.start_go_dist_time = time.time()
-        self.state = 'I'
+        self.__set_state__('I')
 
     def backward_step(self, steps):
+        if 'K' == state:
+            self.logger.warn("duplicate '%s' order, ignored"%state)
+            return
         self.send_verify_order(order='K', data1=steps/256,
                                data2=steps % 256)
         self.start_go_dist_time = time.time()
-        self.state = 'K'
+        self.__set_state__('K')
 
     def stop(self):
+        if 's' == state:
+            self.logger.warn("duplicate '%s' order, ignored"%state)
+            return
         self.send_verify_order(order='s')
-        self.state = 's'
+        self.__set_state__('s')
 
     def __verify_or_retry(self, ack_msg):
         self.rcv_uart_msg()
@@ -226,7 +242,7 @@ class CarProxy():
                 # pdb.set_trace()
                 if ok_reply in pack:
                     # got right reply.
-                    self.state = 's'
+                    self.__set_state__('s')
                     del self.msg_list[0: idx+1]
                     self.logger.info("OK_MSG:" + repr(pack))
                     return True
