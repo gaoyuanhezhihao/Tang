@@ -11,6 +11,7 @@ from Queue import Queue
 import pdb
 from const_var import const
 import os
+from odom import Odometry
 
 if 'Linux' in platform():
     PORT_PREFIX = '/dev/ttyUSB'
@@ -19,7 +20,7 @@ elif 'Windows' in platform():
 const.retry_limit = 2  # if failed after 2 retries, Raise error.
 const.ack_time_lmt = 1.0  # wait no more than 1000 ms before receiving reply.
 const.ok_time_lmt = 2.0
-const.pulses_per_degree = 1720/90
+const.pulses_per_degree = 1720.0/90
 const.pulses_per_cm = 65.57
 const.split_flag = '\r\n'
 const.peek_interval = 2
@@ -33,9 +34,12 @@ const.log_dir = './car_proxy.log/'
 
 
 class CarProxy():
+
     __state__
+
     def __set_state__(self, new_state):
         self.__state__ = new_state
+        self.odom.state_change
 
     def init_log(self):
         if not os.path.exists(const.log_dir):
@@ -78,6 +82,7 @@ class CarProxy():
         self.step_que = Queue()
         self.last_peek_time = 0
 
+        self.odm = Odometry(self.logger)
         # self.rcv_callback = {r'._ok': self.__ok_receive__,
                              # r'state:.': self.__state_update__}
 
