@@ -10,6 +10,7 @@ import serial
 from const_var import const
 import threading
 import pdb
+logging.basicConfig(level=logging.DEBUG)
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 HOST = '127.0.0.1'
@@ -30,7 +31,7 @@ elif 'Windows' in platform():
 COM_CMD = PORT_PREFIX+'2'
 COM_ODOM = PORT_PREFIX+'3'
 
-valid_cmd = ['s', 'p', 'l', 'r', 'L', 'R', 'f', 'b', 'F', 'B', 'L', 'R', 'I', 'K', 'Q']
+valid_cmd = ('s', 'p', 'l', 'r', 'L', 'R', 'f', 'b', 'F', 'B', 'L', 'R', 'I', 'K', 'Q')
 delay_reply_cmd = ['F', 'B', 'L', 'R', 'I', 'K']
 valid_states = ['s', 'f', 'b', 'l', 'r', 'L', 'R', 'F', 'B', 'I', 'K']
 
@@ -131,8 +132,9 @@ class MockCar(object):
         elif self.state in ['l', 'r', 'L', 'R']:
             self.step += const.cm_per_sec * const.interval
             # self.step = int(self.step)
-        self.send("cm:{}".format(self.cm), self.port_odom)
-        self.send("step:{}".format(self.step), self.port_odom)
+        odom_pack = "cm:{};step:{}".format(int(self.cm), int(self.step))
+        self.logger.debug("odom pack:'{}'".format(odom_pack))
+        self.send(odom_pack, self.port_odom)
 
     def check_report(self):
 

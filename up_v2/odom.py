@@ -1,21 +1,21 @@
 #!/usr/bin/python
 from time import time
-from math import cos, sin
-
+from math import cos, sin, pi
+import rospy
 
 
 class Odometry(object):
-    _logger
-    _prev_node = {}
+    _logger = None
     _x = 0.0
     _y = 0.0
-    _theta = 90.0 #degree
+    _theta = pi/2  # 90 degree
     _vec_x, _vec_y = 0.0, 0.0
-    _state = 's'
+    _state = ''
+    _time = 0.0
     updated = False
 
-    def __vec_update():
-        _vec_x, _vec_y = cos(self._theta), sin(self._theta)
+    def __vec_update(self):
+        self._vec_x, self._vec_y = cos(self._theta), sin(self._theta)
 
     def __left(self, cm, step):
         dth = step / const.pulses_per_degree
@@ -32,28 +32,36 @@ class Odometry(object):
         self._theta = theta
 
     def __forward(self, cm, step):
-        self._x = _prev_node['x'] + cm * _vec_x
-        self._y = _prev_node['y'] + cm * _vec_y
+        self._x = cm * self._vec_x
+        self._y = cm * self._vec_y
 
     def __back(self, cm, step):
-        self._x = _prev_node['x'] - cm * _vec_x
-        self._y = _prev_node['y'] - cm * _vec_y
+        self._x = cm * self._vec_x
+        self._y = cm * self._vec_y
 
     def __init__(self, logger):
         self._logger = logger
         self.dispath_map = {'l': self.__left, 'L': self.__left,
-                            'r': self.__right, 'R':self.__right,
+                            'r': self.__right, 'R': self.__right,
                             'f': self.__forward, 'F': self.__forward,
                             'b': self.__back, 'B': self.__back}
 
     def update(self, cm, step):
-        if state in ('l', 'L', 'r', 'R', 'f', 'F', 'b', 'B'):
-            self.dispath_map[state](cm, step)
+        self._logger.info("cm=%d, step=%d" % (cm, step))
+        if self._state in ('l', 'L', 'r', 'R', 'f', 'F', 'b', 'B'):
+            self.dispath_map[self._state](cm, step)
+            self._time = rospy.Time.now()
             self.updated = True
 
+    def __save_old(self):
+        self.
+
     def state_change(self, new_state):
+        assert self._state != new_state
         self._state = new_state
+        self.__vec_update()
 
     def get_odom(self):
-        updated = False
-
+        self.updated = False
+        self._logger.info("x=%d, y=%d" % (self._x, self._y))
+        return self._x, self._y, self._theta, self._time

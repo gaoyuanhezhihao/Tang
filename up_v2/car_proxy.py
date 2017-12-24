@@ -6,12 +6,13 @@ from platform import platform
 import logging
 import serial
 import struct
-import time
+from time import time
 from Queue import Queue
 import pdb
 from const_var import const
 import os
 from odom import Odometry
+logging.basicConfig(level=logging.DEBUG)
 
 if 'Linux' in platform():
     PORT_PREFIX = '/dev/ttyUSB'
@@ -31,15 +32,36 @@ COM1 = PORT_PREFIX+'0'
 COM2 = PORT_PREFIX+'1'
 
 const.log_dir = './car_proxy.log/'
+line_move_states = ('f', 'b', 'F', 'B', 'I', 'K')
+turn_states = ('l', 'L', 'r', 'R')
+
+
+class State():
+    __state__ = ''
+
+    def __init__(self, odom):
+        self.odm = odom
+
+    def __clear_que(self):
+        self.cm_que = Queue()
+        self.step_que = Queue()
+
+    def set(self, new_state):
+        self.__state__ = new_state
+        self.odm.state_change(new_state)
+        self.__clear_que()
+
+    def get(self):
+        return self.__state__
+
+    def is_turning(self):
+        return self.__state__ in turn_states
+
+    def is_lineMove(self):
+        return self.__state__ in line_move_states
 
 
 class CarProxy():
-
-    __state__
-
-    def __set_state__(self, new_state):
-        self.__state__ = new_state
-        self.odom.state_change
 
     def init_log(self):
         if not os.path.exists(const.log_dir):
@@ -75,14 +97,15 @@ class CarProxy():
         # self.waiting_turn_ok = ''
         self.tmp_msg = ''
         self.tmp_odom_msg = ''
-        self.__set_state__('s')
-        self.start_turn_time = time.time()
+        self.odm = Odometry(self.logger)
+        self.state = State(self.odm)
+        self.state.set('s')
+        self.start_turn_time = time()
         self.msg_list = []
         self.cm_que = Queue()
         self.step_que = Queue()
         self.last_peek_time = 0
 
-        self.odm = Odometry(self.logger)
         # self.rcv_callback = {r'._ok': self.__ok_receive__,
                              # r'state:.': self.__state_update__}
 
@@ -103,6 +126,7 @@ class CarProxy():
         self.__verify_or_retry(order+'_ack')
 
     def __Send_Direct_Order(self, order=None, data1=None, data2=None):
+        self.logger.info("%s, %s, %s" % (order, str(data1), str(data2)))
         if data1 is None or data2 is None:
             data1 = 0x00
             data2 = 0x00
@@ -119,8 +143,7 @@ class CarProxy():
         self.last_data1 = data1
         self.last_data2 = data2
         self.right_ack = self.last_order + '_ack'
-        self.send_msg_time = time.time()
-        self.logger.info("Send_Direct_Order:"+msg)
+        self.send_msg_time = time()
 
     def __set_pwm(self, new_pwm):
         self.pwm = int(new_pwm)
@@ -128,105 +151,107 @@ class CarProxy():
                                data2=self.pwm % 256)
 
     def change_speed(self, speed):
+        assert speed >= 0.0
+        # self.logger.info("speed=%f" % speed)
         new_pwm = const.STD_PWM * speed
         self.__set_pwm(new_pwm)
 
     def turn_left(self):
-        if 'l' == state:
-            self.logger.warn("duplicate '%s' order, ignored"%state)
+        if 'l' == self.state.get():
+            self.logger.warn("duplicate '%s' order, ignored" % self.state.get())
             return
         self.send_verify_order(order='l')
-        self.__set_state__('l')
+        self.state.set('l')
 
     def turn_left_degree(self, degree):
         steps = int(degree * const.pulses_per_degree)
         self.step_left(steps)
 
     def step_left(self, steps):
-        if 'L' == state:
-            self.logger.warn("duplicate '%s' order, ignored"%state)
+        if 'L' == self.state.get():
+            self.logger.warn("duplicate '%s' order, ignored" % self.state.get())
             return
         self.send_verify_order(order='L', data1=steps/256,
                                data2=steps % 256)
-        self.start_turn_time = time.time()
-        self.__set_state__('L')
+        self.start_turn_time = time()
+        self.state.set('L')
 
     def turn_right(self):
-        if 'r' == state:
-            self.logger.warn("duplicate '%s' order, ignored"%state)
+        if 'r' == self.state.get():
+            self.logger.warn("duplicate '%s' order, ignored" % self.state.get())
             return
         self.send_verify_order(order='r')
-        self.__set_state__('r')
+        self.state.set('r')
 
     def turn_right_degree(self, degree):
         steps = int(degree * const.pulses_per_degree)
         self.step_right(steps)
 
     def step_right(self, steps):
-        if 'R' == state:
-            self.logger.warn("duplicate '%s' order, ignored"%state)
+        if 'R' == self.state.get():
+            self.logger.warn("duplicate '%s' order, ignored" % self.state.get())
             return
         self.send_verify_order(order='R', data1=steps/256,
                                data2=steps % 256)
-        self.start_turn_time = time.time()
-        self.__set_state__('R')
+        self.start_turn_time = time()
+        self.state.set('R')
 
     def forward(self):
-        if 'f' == state:
-            self.logger.warn("duplicate '%s' order, ignored"%state)
+        if 'f' == self.state.get():
+            self.logger.warn("duplicate '%s' order, ignored" % self.state.get())
             return
         self.send_verify_order(order='f')
-        self.__set_state__('f')
+        self.state.set('f')
 
     def backward(self):
-        if 'b' == state:
-            self.logger.warn("duplicate '%s' order, ignored"%state)
+        if 'b' == self.state.get():
+            self.logger.warn("duplicate '%s' order, ignored" % self.state.get())
             return
         self.send_verify_order(order='b')
-        self.__set_state__('b')
+        self.state.set('b')
 
     def forward_dist(self, dist_in_cm):
-        if 'F' == state:
-            self.logger.warn("duplicate '%s' order, ignored"%state)
+        if 'F' == self.state.get():
+            self.logger.warn("duplicate '%s' order, ignored" % self.state.get())
             return
         self.send_verify_order(order='F', data1=dist_in_cm/256,
                                data2=dist_in_cm % 256)
-        self.start_go_dist_time = time.time()
-        self.__set_state__('F')
+        self.start_go_dist_time = time()
+        self.state.set('F')
 
     def backward_dist(self, dist_in_cm):
-        if 'B' == state:
-            self.logger.warn("duplicate '%s' order, ignored"%state)
+        if 'B' == self.state.get():
+            self.logger.warn("duplicate '%s' order, ignored" % self.state.get())
             return
         self.send_verify_order(order='B', data1=dist_in_cm/256,
                                data2=dist_in_cm % 256)
-        self.start_go_dist_time = time.time()
-        self.__set_state__('B')
+        self.start_go_dist_time = time()
+        self.state.set('B')
 
     def forward_step(self, steps):
-        if 'I' == state:
-            self.logger.warn("duplicate '%s' order, ignored"%state)
+        if 'I' == self.state.get():
+            self.logger.warn("duplicate '%s' order, ignored" % self.state.get())
             return
         self.send_verify_order(order='I', data1=steps/256,
                                data2=steps % 256)
-        self.start_go_dist_time = time.time()
-        self.__set_state__('I')
+        self.start_go_dist_time = time()
+        self.state.set('I')
 
     def backward_step(self, steps):
-        if 'K' == state:
-            self.logger.warn("duplicate '%s' order, ignored"%state)
+        if 'K' == self.state.get():
+            self.logger.warn("duplicate '%s' order, ignored" % self.state.get())
             return
         self.send_verify_order(order='K', data1=steps/256,
                                data2=steps % 256)
-        self.start_go_dist_time = time.time()
-        self.__set_state__('K')
+        self.start_go_dist_time = time()
+        self.state.set('K')
 
     def stop(self):
-        if 's' == state:
-            self.logger.warn("duplicate '%s' order, ignored"%state)
+        if 's' == self.state.get():
+            self.logger.warn("duplicate '%s' order, ignored" % self.state.get())
             return
         self.send_verify_order(order='s')
-        self.__set_state__('s')
+        self.state.set('s')
 
     def __verify_or_retry(self, ack_msg):
         self.rcv_uart_msg()
@@ -240,14 +265,14 @@ class CarProxy():
         raise Exception("Car Error", "RETRY TOO TIMES")
 
     def check_ok_msg(self):
-        if self.state in ['L', 'R', 'F', 'B', 'I', 'K']:
+        if self.state.get() in ['L', 'R', 'F', 'B', 'I', 'K']:
             '''car is in turning state.'''
-            ok_reply = '%s_ok' % self.state
+            ok_reply = '%s_ok' % self.state.get()
             for idx, pack in enumerate(self.msg_list):
                 # pdb.set_trace()
                 if ok_reply in pack:
                     # got right reply.
-                    self.__set_state__('s')
+                    self.state.set('s')
                     del self.msg_list[0: idx+1]
                     self.logger.info("OK_MSG:" + repr(pack))
                     return True
@@ -283,6 +308,14 @@ class CarProxy():
                 return True
         return False
 
+    def get_speed(self):
+        if self.state.get() in line_move_states:
+            vx = self.pwm / (100 * const.pulses_per_cm)
+            return (vx, 0, 0) if self.state.is_lineMove() else (-vx, 0, 0)
+        elif self.state.get() in turn_states:
+            vth = self.pwm * pi / (180.0 * const.pulses_per_degree)
+            return (0, 0, vth) if self.state.is_turning() else (0, 0, -vth)
+
     def read_odom(self):
         bytes_waiting = self.odom_port.inWaiting()
         if bytes_waiting >= 1:
@@ -292,9 +325,8 @@ class CarProxy():
 
             self.tmp_odom_msg = new_msg_list[-1]
             for pack in new_msg_list[:-1]:
-                if pack[:3] == 'cm:':
-                    self.logger.info("cm que << {}".format(float(pack[3:])))
-                    self.cm_que.put(float(pack[3:]))
-                elif pack[:5] == 'step:':
-                    self.logger.info("step que << {}".format(float(pack[5:])))
-                    self.step_que.put(float(pack[5:]))
+                if pack[:3] == 'cm:' and pack.find(';') != -1:
+                    coma = pack.find(';')
+                    cm = int(pack[3:coma])
+                    step = int(pack[coma+6:])
+                    self.odm.update(cm, step)
