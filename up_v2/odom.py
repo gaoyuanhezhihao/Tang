@@ -18,14 +18,14 @@ class Odometry(object):
         self._vec_x, self._vec_y = cos(self._theta), sin(self._theta)
 
     def __left(self, cm, step):
-        dth = step / const.pulses_per_degree
+        dth = step / self._pls_degree
         theta = self._theta
         theta = self._prev_theta + dth
         theta = theta - 360.0 if theta > 360.0 else theta
         self._theta = theta
 
     def __right(self, cm, step):
-        dth = step / const.pulses_per_degree
+        dth = step / self._pls_degree
         theta = self._theta
         theta = self._prev_theta - dth
         theta = theta + 360.0 if theta < 0.0 else theta
@@ -39,8 +39,9 @@ class Odometry(object):
         self._x = self._prev_x - cm * self._vec_x
         self._y = self._prev_y - cm * self._vec_y
 
-    def __init__(self, logger):
+    def __init__(self, logger, pulses_per_degree):
         self._logger = logger
+        self._pls_degree = pulses_per_degree
         self.dispath_map = {'l': self.__left, 'L': self.__left,
                             'r': self.__right, 'R': self.__right,
                             'f': self.__forward, 'F': self.__forward,
@@ -69,4 +70,4 @@ class Odometry(object):
     def get_odom(self):
         self.updated = False
         self._logger.info("x=%d, y=%d" % (self._x, self._y))
-        return self._x, self._y, self._theta, self._time
+        return self._x/1000, self._y/1000, self._theta, self._time
