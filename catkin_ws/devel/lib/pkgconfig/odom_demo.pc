@@ -1,7 +1,7 @@
 prefix=/home/hzh/study/car/Tang/catkin_ws/devel
 
-Name: the_car
-Description: Description of the_car
+Name: odom_demo
+Description: Description of odom_demo
 Version: 0.0.0
 Cflags: 
 Libs: -L/home/hzh/study/car/Tang/catkin_ws/devel/lib 
