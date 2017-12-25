@@ -34,6 +34,8 @@ COM_ODOM = PORT_PREFIX+'3'
 valid_cmd = ('s', 'p', 'l', 'r', 'L', 'R', 'f', 'b', 'F', 'B', 'L', 'R', 'I', 'K', 'Q')
 delay_reply_cmd = ['F', 'B', 'L', 'R', 'I', 'K']
 valid_states = ['s', 'f', 'b', 'l', 'r', 'L', 'R', 'F', 'B', 'I', 'K']
+
+move_states = ('l', 'r', 'L', 'R', 'f', 'b', 'F', 'B', 'I', 'K')
 class Rate(object):
 
     def __init__(self, freq, logger):
@@ -62,8 +64,6 @@ class MockCar(object):
         self.state = 's'
         self.cm = 0
         self.step = 0
-
-
 
     def init_serial(self):
         print("serial port available:\n")
@@ -116,6 +116,10 @@ class MockCar(object):
             self.send_order(self.call_back_data)
             self.state = 's'
 
+    def init_cnt(self):
+        self.cm = 0
+        self.step = 0
+
     def process_msg(self, message):
         print("recv", repr(message), "\n")
         msg_order = message[1].decode()
@@ -137,6 +141,8 @@ class MockCar(object):
 
             if msg_order in valid_states:
                 self.state = msg_order
+            if msg_order in move_states:
+                self.init_cnt()
         else:
             self.logger.error("wrong format %s", msg_order)
 

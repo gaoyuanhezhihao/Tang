@@ -13,6 +13,7 @@ from const_var import const
 import os
 from odom import Odometry
 logging.basicConfig(level=logging.DEBUG)
+from math import pi
 
 if 'Linux' in platform():
     PORT_PREFIX = '/dev/ttyUSB'
@@ -97,7 +98,7 @@ class CarProxy():
         # self.waiting_turn_ok = ''
         self.tmp_msg = ''
         self.tmp_odom_msg = ''
-        self.odm = Odometry(self.logger)
+        self.odm = Odometry(self.logger, const.pulses_per_degree)
         self.state = State(self.odm)
         self.state.set('s')
         self.start_turn_time = time()
