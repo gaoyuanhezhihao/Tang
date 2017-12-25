@@ -34,6 +34,21 @@ COM_ODOM = PORT_PREFIX+'3'
 valid_cmd = ('s', 'p', 'l', 'r', 'L', 'R', 'f', 'b', 'F', 'B', 'L', 'R', 'I', 'K', 'Q')
 delay_reply_cmd = ['F', 'B', 'L', 'R', 'I', 'K']
 valid_states = ['s', 'f', 'b', 'l', 'r', 'L', 'R', 'F', 'B', 'I', 'K']
+class Rate(object):
+
+    def __init__(self, freq, logger):
+        self._interval = 1.0 / freq
+        self.last_time = time.time()
+        self.logger = logger
+
+    def sleep(self):
+        wait_time = self._interval - (time.time() - self.last_time);
+        if wait_time > 0.0:
+            time.sleep(wait_time)
+        else:
+            self.logger.warn("loop frequence is too high")
+        self.last_time = time.time()
+
 
 class MockCar(object):
 
@@ -144,6 +159,7 @@ class MockCar(object):
             self.send_odom_data()
 
     def loop(self):
+        r = Rate(10, self.logger)
         while True:
             bytes_wait = self.port.inWaiting()
             if bytes_wait >= 4:
@@ -151,6 +167,7 @@ class MockCar(object):
                 if self.msg_rcv[0] == 'H':
                     self.process_msg(self.msg_rcv)
             self.check_report()
+            r.sleep()
 
 if __name__ == '__main__':
     mock_car = MockCar()
