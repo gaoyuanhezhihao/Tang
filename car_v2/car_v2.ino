@@ -82,8 +82,8 @@ void check_report(){
 	}
 	if(now - last_time > GAP) {
 		Serial1.print("cm:");
-		Serial1.println(get_cm());
-		Serial1.print("step:");
+		Serial1.print(get_cm());
+		Serial1.print(";step:");
 		Serial1.println(get_step());
 		last_time = now;
 	}
