@@ -22,12 +22,12 @@ elif 'Windows' in platform():
 const.retry_limit = 2  # if failed after 2 retries, Raise error.
 const.ack_time_lmt = 1.0  # wait no more than 1000 ms before receiving reply.
 const.ok_time_lmt = 2.0
-const.pulses_per_degree = 1720.0/90
-const.pulses_per_cm = 65.57
+const.pulses_per_degree = 3370/180
+const.pulses_per_cm = 64.94
 const.split_flag = '\r\n'
 const.peek_interval = 2
 # const.peek_interval = 0.5  #peek state every 500ms
-const.STD_PWM = 3200
+const.STD_PWM = 1600
 
 COM1 = PORT_PREFIX+'0'
 COM2 = PORT_PREFIX+'1'

@@ -8,8 +8,7 @@
 #include "main.h"
 
 #define COUNTER_PORT 3
-#define PULSE_PER_CM 66
-#define DIST_GO_PWM 1000
+#define PULSE_PER_CM 65
 
 
 
