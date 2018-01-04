@@ -1,8 +1,8 @@
-prefix=/home/hzh/study/car/Tang/catkin_ws/devel
+prefix=/home/ustc/car/Tang/catkin_ws/devel
 
 Name: the_car
 Description: Description of the_car
 Version: 0.0.0
 Cflags: 
-Libs: -L/home/hzh/study/car/Tang/catkin_ws/devel/lib 
+Libs: -L/home/ustc/car/Tang/catkin_ws/devel/lib 
 Requires: 

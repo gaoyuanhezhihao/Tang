@@ -19,17 +19,11 @@ class Odometry(object):
 
     def __left(self, cm, step):
         dth = step / self._pls_radian
-        theta = self._theta
-        theta = self._prev_theta + dth
-        theta = theta - 2*pi if theta > 2*pi else theta
-        self._theta = theta
+        self._theta = (self._prev_theta + dth)% (2*pi)
 
     def __right(self, cm, step):
         dth = step / self._pls_radian
-        theta = self._theta
-        theta = self._prev_theta - dth
-        theta = theta + 2*pi if theta < 0.0 else theta
-        self._theta = theta
+        self._theta = (self._prev_theta - dth)%(2*pi)
 
     def __forward(self, cm, step):
         self._x = self._prev_x + cm * self._vec_x
