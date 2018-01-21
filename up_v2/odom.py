@@ -42,10 +42,11 @@ class Odometry(object):
                             'b': self.__back, 'B': self.__back}
 
     def update(self, cm, step):
-        self._logger.info("cm=%d, step=%d" % (cm, step))
+        self._logger.debug("cm=%d, step=%d" % (cm, step))
         if self._state in ('l', 'L', 'r', 'R', 'f', 'F', 'b', 'B'):
             self.dispath_map[self._state](cm, step)
-            self._time = rospy.Time.now()
+            # self._time = rospy.Time.now()
+            self._time = time()
             self.updated = True
 
     def __save_old(self):

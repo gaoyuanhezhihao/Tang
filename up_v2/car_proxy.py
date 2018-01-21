@@ -14,6 +14,7 @@ import os
 from odom import Odometry
 logging.basicConfig(level=logging.DEBUG)
 from math import pi
+import EasyLogger
 
 if 'Linux' in platform():
     PORT_PREFIX = '/dev/ttyUSB'
@@ -65,22 +66,23 @@ class State():
 class CarProxy():
 
     def init_log(self):
-        if not os.path.exists(const.log_dir):
-            os.makedirs(const.log_dir)
-        _LOG_FORMAT = '%(asctime)s (%(filename)s/%(funcName)s)' \
-            ' %(name)s %(levelname)s - %(message)s'
-        self.logger = logging.getLogger("car_proxy")
-        _handler = logging.handlers.RotatingFileHandler(
-            const.log_dir + os.path.basename(__file__)[:-3]+".log",
-            maxBytes=102400, backupCount=20)
-        _formatter = logging.Formatter(_LOG_FORMAT)
-        _handler.setFormatter(_formatter)
-        self.logger.addHandler(_handler)
-        self.logger.setLevel(logging.INFO)
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.INFO)
-        ch.setFormatter(_formatter)
-        self.logger.addHandler(ch)
+        self.logger = EasyLogger.EasyLogger("CarProxy", f_level='debug', cmd_level='info')
+        # if not os.path.exists(const.log_dir):
+            # os.makedirs(const.log_dir)
+        # _LOG_FORMAT = '%(asctime)s (%(filename)s/%(funcName)s)' \
+            # ' %(name)s %(levelname)s - %(message)s'
+        # self.logger = logging.getLogger("car_proxy")
+        # _handler = logging.handlers.RotatingFileHandler(
+            # const.log_dir + os.path.basename(__file__)[:-3]+".log",
+            # maxBytes=102400, backupCount=20)
+        # _formatter = logging.Formatter(_LOG_FORMAT)
+        # _handler.setFormatter(_formatter)
+        # self.logger.addHandler(_handler)
+        # self.logger.setLevel(logging.INFO)
+        # ch = logging.StreamHandler()
+        # ch.setLevel(logging.INFO)
+        # ch.setFormatter(_formatter)
+        # self.logger.addHandler(ch)
 
     def __init__(self, logger=None):
         self.logger = logger
@@ -127,7 +129,7 @@ class CarProxy():
         self.__verify_or_retry(order+'_ack')
 
     def __Send_Direct_Order(self, order=None, data1=None, data2=None):
-        self.logger.info("%s, %s, %s" % (order, str(data1), str(data2)))
+        self.logger.debug("%s, %s, %s" % (order, str(data1), str(data2)))
         if data1 is None or data2 is None:
             data1 = 0x00
             data2 = 0x00
@@ -153,7 +155,7 @@ class CarProxy():
 
     def change_speed(self, speed):
         assert speed >= 0.0
-        # self.logger.info("speed=%f" % speed)
+        # self.logger.debug("speed=%f" % speed)
         new_pwm = const.STD_PWM * speed
         self.__set_pwm(new_pwm)
 
@@ -275,7 +277,7 @@ class CarProxy():
                     # got right reply.
                     self.state.set('s')
                     del self.msg_list[0: idx+1]
-                    self.logger.info("OK_MSG:" + repr(pack))
+                    self.logger.debug("OK_MSG:" + repr(pack))
                     return True
 
     def get_car_stae(self):
@@ -284,7 +286,7 @@ class CarProxy():
         while retry_count <= const.retry_limit:
             retry_count += 1
             flag, msg = self.rcv_ack(len(good_reply))
-            self.logger.info("rcv msg:%s", repr(msg))
+            self.logger.debug("rcv msg:%s", repr(msg))
             if flag and "Q_ack" in msg:
                 return msg[5]
         # connection failed.
@@ -299,13 +301,13 @@ class CarProxy():
         byte_2_read = self.port.inWaiting()
         if byte_2_read >= 1:
             rcv = self.port.read(byte_2_read)
-            self.logger.info("rcv:'{}'".format(rcv))
+            self.logger.debug("rcv:'{}'".format(rcv))
             self.tmp_msg += rcv
             new_msg_list = self.tmp_msg.split(const.split_flag)
             if len(new_msg_list) > 1:
                 self.tmp_msg = new_msg_list[-1]
                 self.msg_list += new_msg_list[0:-1]
-                self.logger.info("msg list add:{}".format(new_msg_list[0:-1]))
+                self.logger.debug("msg list add:{}".format(new_msg_list[0:-1]))
                 return True
         return False
 
@@ -317,6 +319,16 @@ class CarProxy():
             vth = self.pwm * pi / (180.0 * const.pulses_per_degree)
             return (0, 0, vth) if self.state.is_turning() else (0, 0, -vth)
 
+    def extra_odom(self, pack):
+        if type(pack) is str and len(pack) > 8 and \
+           pack[:3] == 'cm:' and pack.find(';') != -1:
+            coma = pack.find(';')
+            cm_str = pack[3:coma]
+            step_str = pack[coma+6:]
+            if cm_str.isdigit() and step_str.isdigit():
+                return True, int(cm_str), int(step_str)
+        return False, None, None
+
     def read_odom(self):
         bytes_waiting = self.odom_port.inWaiting()
         if bytes_waiting >= 1:
@@ -326,8 +338,10 @@ class CarProxy():
 
             self.tmp_odom_msg = new_msg_list[-1]
             for pack in new_msg_list[:-1]:
-                if pack[:3] == 'cm:' and pack.find(';') != -1:
-                    coma = pack.find(';')
-                    cm = int(pack[3:coma])
-                    step = int(pack[coma+6:])
+                self.logger.debug("rcv pack:'{}'".format(pack))
+                pack_valid, cm, step = self.extra_odom(pack)
+                if pack_valid:
                     self.odm.update(cm, step)
+                else:
+                    self.logger.warning("broken pack:'%f'".format(pack))
+
