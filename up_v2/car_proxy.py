@@ -318,6 +318,8 @@ class CarProxy():
         elif self.state.get() in turn_states:
             vth = self.pwm * pi / (180.0 * const.pulses_per_degree)
             return (0, 0, vth) if self.state.is_turning() else (0, 0, -vth)
+        else:
+            return (0, 0, 0)
 
     def extra_odom(self, pack):
         if type(pack) is str and len(pack) > 8 and \
