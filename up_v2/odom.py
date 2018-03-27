@@ -1,7 +1,13 @@
 #!/usr/bin/python
 from time import time
 from math import cos, sin, pi
-import rospy
+# import rospy
+
+_2PI = 2*pi
+
+
+def _readable_theta(theta):
+    return theta * 180.0 / pi
 
 
 class Odometry(object):
@@ -64,5 +70,6 @@ class Odometry(object):
 
     def get_odom(self):
         self.updated = False
-        self._logger.info("x=%d, y=%d, theta=%f" % (self._x, self._y, self._theta))
+        self._logger.info("x=%d, y=%d, theta=%f" % (self._x, self._y, _readable_theta(self._theta)))
+        self._logger.info("vec_x=%f, vec_y=%f" % (self._vec_x, self._vec_y))
         return self._x/1000, self._y/1000, self._theta, self._time
