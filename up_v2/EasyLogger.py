@@ -49,19 +49,19 @@ class EasyLogger(object):
 
     def debug(self, info):
         call_fname, call_func = track_prev_func()
-        new_info=" %s/%s--%s"%(call_fname, call_func, info)
+        new_info=" %s/%s--%s"%(os.path.split(call_fname)[-1], call_func, info)
         for lg in self.log_list:
             lg.debug(new_info)
 
     def info(self, info):
         call_fname, call_func = track_prev_func()
-        new_info=" %s/%s--%s"%(call_fname, call_func, info)
+        new_info=" %s/%s--%s"%(os.path.split(call_fname)[-1], call_func, info)
         for lg in self.log_list:
             lg.info(new_info)
 
     def critical(self, info):
         call_fname, call_func = track_prev_func()
-        new_info=" %s/%s--%s"%(call_fname, call_func, info)
+        new_info=" %s/%s--%s"%(os.path.split(call_fname)[-1], call_func, info)
         for lg in self.log_list:
             lg.critical(new_info)
 
@@ -70,13 +70,13 @@ class EasyLogger(object):
 
     def warning(self, info):
         call_fname, call_func = track_prev_func()
-        new_info=" %s/%s--%s"%(call_fname, call_func, info)
+        new_info=" %s/%s--%s"%(os.path.split(call_fname)[-1], call_func, info)
         for lg in self.log_list:
             lg.warning(new_info)
 
     def error(self, info):
         call_fname, call_func = track_prev_func()
-        new_info=" %s/%s--%s"%(call_fname, call_func, info)
+        new_info=" %s/%s--%s"%(os.path.split(call_fname), call_func, info)
         for lg in self.log_list:
             lg.error(new_info)
 
