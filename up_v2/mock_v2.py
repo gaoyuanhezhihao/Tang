@@ -108,7 +108,10 @@ class MockCar(object):
         self.send(message, self.port)
 
     def send(self, message, port):
-        port.write(message+const.split_flag)
+        pack = message+const.split_flag
+        pack = pack.encode('ascii','ignore')
+        # print("send='%s'"%pack)
+        port.write(pack)
         # self.logger.info("port sent:'%s'" % message)
 
     def call_back(self):
@@ -151,7 +154,7 @@ class MockCar(object):
             self.cm += const.cm_per_sec * const.interval
             # self.cm = int(self.cm)
         elif self.state in ['l', 'r', 'L', 'R']:
-            self.step += const.cm_per_sec * const.interval
+            self.step += const.cm_per_sec*10 * const.interval
             # self.step = int(self.step)
         odom_pack = "cm:{};step:{}".format(int(self.cm), int(self.step))
         self.logger.debug("odom pack:'{}'".format(odom_pack))
