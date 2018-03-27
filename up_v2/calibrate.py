@@ -14,6 +14,8 @@ import logging
 from logging import handlers
 from car_proxy import CarProxy
 from const_var import const
+from pdb import set_trace
+import EasyLogger
 
 log_name = 'Calibrate'
 
@@ -21,25 +23,7 @@ class App():
 
 
     def init_log(self):
-        _LOG_FORMAT = '%(asctime)s (%(filename)s/%(funcName)s)' \
-            ' %(name)s %(levelname)s - %(message)s'
-        self.logger = logging.getLogger(log_name)
-        _handler = logging.handlers.RotatingFileHandler(
-            "./log/" +
-            os.path.basename(__file__)[
-                :-
-                3] +
-            ".log",
-            maxBytes=102400,
-            backupCount=20)
-        _formatter = logging.Formatter(_LOG_FORMAT)
-        _handler.setFormatter(_formatter)
-        self.logger.addHandler(_handler)
-        self.logger.setLevel(logging.INFO)
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.INFO)
-        ch.setFormatter(_formatter)
-        self.logger.addHandler(ch)
+        self.logger = EasyLogger.EasyLogger("Calibrate", f_level='debug', cmd_level='info')
 
     def __init__(self):
         self.init_log()
@@ -53,7 +37,14 @@ class App():
         self.car.change_speed(speed)
 
     def forward(self):
+        # set_trace()
         self.car.forward()
+
+    def left(self):
+        self.car.turn_left()
+
+    def right(self):
+        self.car.turn_right()
 
     def backward(self):
         self.car.backward()
@@ -104,6 +95,15 @@ class App():
         self.Backward_button = Tkinter.Button(self.panel_now, text="Backward",
                                               command=self.backward)
         self.Backward_button.pack()
+
+        self.left_button = Tkinter.Button(self.panel_now, text="left",
+                                              command=self.left)
+        self.left_button.pack()
+
+        self.right_button = Tkinter.Button(self.panel_now, text="right",
+                                              command=self.right)
+        self.right_button.pack()
+
 
         self.Stop_button = Tkinter.Button(self.panel_now, text="stop",
                                           command=self.stop)
@@ -182,9 +182,16 @@ class App():
 
 
     def run(self):
+        i = 0
         while True:
             self.panel_now.update()
+            # print("update panel_now", i)
+            i += 1
             self.car.routines()
+            if self.car.odm.updated:
+                x, y, theta, time_stamp = self.car.odm.get_odom()
+                print("x=%f, y=%f, theta=%f"%(x,y,theta))
+
 
 
 if __name__ == '__main__':
