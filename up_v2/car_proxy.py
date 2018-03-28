@@ -15,6 +15,7 @@ from odom import Odometry
 logging.basicConfig(level=logging.DEBUG)
 from math import pi
 import EasyLogger
+from config import Odom_Freq, Odom_steps_of_cm, steps_per_cm, steps_per_degree
 
 if 'Linux' in platform():
     PORT_PREFIX = '/dev/ttyUSB'
@@ -23,8 +24,6 @@ elif 'Windows' in platform():
 const.retry_limit = 2  # if failed after 2 retries, Raise error.
 const.ack_time_lmt = 1.0  # wait no more than 1000 ms before receiving reply.
 const.ok_time_lmt = 2.0
-const.pulses_per_degree = 3370/180
-const.pulses_per_cm = 64.94
 const.split_flag = '\r\n'
 const.peek_interval = 2
 # const.peek_interval = 0.5  #peek state every 500ms
@@ -100,7 +99,8 @@ class CarProxy():
         # self.waiting_turn_ok = ''
         self.tmp_msg = ''
         self.tmp_odom_msg = ''
-        self.odm = Odometry(self.logger, const.pulses_per_degree)
+        # self.odm = Odometry(self.logger, steps_per_degree)
+        self.odm = Odometry(self.logger)
         self.state = State(self.odm)
         self.state.set('s')
         self.start_turn_time = time()
@@ -167,7 +167,7 @@ class CarProxy():
         self.state.set('l')
 
     def turn_left_degree(self, degree):
-        steps = int(degree * const.pulses_per_degree)
+        steps = int(degree * steps_per_degree)
         self.step_left(steps)
 
     def step_left(self, steps):
@@ -187,7 +187,7 @@ class CarProxy():
         self.state.set('r')
 
     def turn_right_degree(self, degree):
-        steps = int(degree * const.pulses_per_degree)
+        steps = int(degree * steps_per_degree)
         self.step_right(steps)
 
     def step_right(self, steps):
@@ -312,14 +312,15 @@ class CarProxy():
         return False
 
     def get_speed(self):
-        if self.state.get() in line_move_states:
-            vx = self.pwm / (100 * const.pulses_per_cm)
-            return (vx, 0, 0) if self.state.is_lineMove() else (-vx, 0, 0)
-        elif self.state.get() in turn_states:
-            vth = self.pwm * pi / (180.0 * const.pulses_per_degree)
-            return (0, 0, vth) if self.state.is_turning() else (0, 0, -vth)
-        else:
-            return (0, 0, 0)
+        return self.odm.get_speed()
+        # if self.state.get() in line_move_states:
+            # vx = self.pwm / (100 * steps_per_cm)
+            # return (vx, 0, 0) if self.state.is_lineMove() else (-vx, 0, 0)
+        # elif self.state.get() in turn_states:
+            # vth = self.pwm * pi / (180.0 * steps_per_degree)
+            # return (0, 0, vth) if self.state.is_turning() else (0, 0, -vth)
+        # else:
+            # return (0, 0, 0)
 
     def extra_odom(self, pack):
         if type(pack) is str and len(pack) > 8 and \
