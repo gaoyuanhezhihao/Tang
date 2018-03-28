@@ -53,13 +53,13 @@ def move(linear, angular):
 
 
 def check_odom(odom_broadcaster, odom_pub):
-    rospy.loginfo("odm.updated="+str(real_car.odm.updated))
+    # rospy.loginfo("odm.updated="+str(real_car.odm.updated))
     if real_car.odm.updated:
         x, y, theta, time_stamp = real_car.odm.get_odom()
         quat = tf.transformations.quaternion_from_euler(0, 0, theta)
         # tf transform
-        odom_broadcaster.sendTransform((x, y, 0.), quat, time_stamp,
-                                       "base_link", "odom")
+        # odom_broadcaster.sendTransform((x, y, 0.), quat, time_stamp,
+                                       # "base_link", "odom")
         # odometry message
         odom = Odometry()
         odom.header.stamp = time_stamp
@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
     rospy.Subscriber("cmd_vel", Twist, twistCallback)
     # rospy.spin()
-    r = rospy.Rate(1)
+    r = rospy.Rate(10)
     odom_broadcaster = tf.TransformBroadcaster()
     odom_pub = rospy.Publisher("odom", Odometry, queue_size=50)
     while not rospy.is_shutdown():
